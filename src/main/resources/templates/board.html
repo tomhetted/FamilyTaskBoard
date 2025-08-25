@@ -1,42 +1,18 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:th="http://www.thymeleaf.org">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.w3.org/1999/xhtml">
 <head>
-  <meta charset="UTF-8"/>
-  <title th:text="${title} ?: 'TaskBoard'">TaskBoard</title>
+  <meta charset="UTF-8">
+  <title>Board</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 16px; }
     .container { display: flex; gap: 16px; }
-    /* Месячная сетка (7 колонок) */
-    .month-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 120px);
-        grid-auto-rows: 100px;
-        gap: 6px;
-        width: calc(7 * 120px + 6 * 6px);
-    }
-    .day-cell {
-        border: 1px solid #ccc;
-        padding: 6px;
-        background: #fafafa;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        overflow: hidden;
-    }
+    .month-grid { display: grid; grid-template-columns: repeat(7, 120px); grid-auto-rows: 100px; gap: 6px; width: calc(7 * 120px + 6 * 6px); }
+    .day-cell { border: 1px solid #ccc; padding: 6px; background: #fafafa; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
     .day-header { font-weight: bold; font-size: 0.9em; display:flex; justify-content:space-between; }
     .tasks { flex: 1; overflow-y: auto; font-size:0.9em; }
     .task { background: #fff; padding:4px; margin-bottom:4px; border-radius:4px; border:1px solid #eee; }
-    /* Правая колонка — неделя */
-    .week-column {
-        width: 300px;
-    }
-    .week-day {
-        border: 1px solid #ddd;
-        padding: 8px;
-        margin-bottom: 8px;
-        background: #fff;
-    }
+    .week-column { width: 300px; }
+    .week-day { border: 1px solid #ddd; padding: 8px; margin-bottom: 8px; background: #fff; }
     .controls { margin-bottom: 12px; }
     .small { font-size: 0.85em; color:#666; }
     button { cursor: pointer; }
@@ -45,7 +21,8 @@
   </style>
 </head>
 <body>
-<h1 th:text="${title} ?: 'Board'">Board</h1>
+
+<h1 th:text="${board.title} + ' ' + ${board.year} + '-' + ${board.month}">Август 2025</h1>
 
 <div class="controls">
   <button id="prevMonth">Prev</button>
@@ -55,196 +32,26 @@
 
 <div class="container">
   <div>
-    <div class="month-grid" id="monthGrid">
-      <!-- клетки будут рендериться JS -->
-    </div>
+    <div class="month-grid" id="monthGrid"></div>
   </div>
 
   <div class="week-column">
     <h3>Текущая неделя</h3>
-    <div id="weekContainer">
-      <!-- неделя JS -->
-    </div>
+    <div id="weekContainer"></div>
   </div>
 </div>
 
+<!-- Передаем ID доски в JS через Thymeleaf -->
 <script th:inline="javascript">
-  /* Получаем параметры из Thymeleaf */
-  const BOARD_ID = /*[[${boardId}]]*/ 0;
-  let YEAR = /*[[${year}]]*/ 2025;
-  let MONTH = /*[[${month}]]*/ 1; // 1..12
-
-  /* Утилиты */
-  function pad(n){return n<10? '0'+n: ''+n;}
-  function toIso(date){ // date - Date object
-      return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
-  }
-
-  /* Получаем все задачи за месяц */
-  async function fetchMonthTasks(boardId, year, month){
-      const res = await fetch(`/api/boards/${boardId}/tasks/month`);
-      if (!res.ok) return [];
-      return res.json(); // массив TaskDTO с полем date (ISO)
-  }
-
-  /* Получаем задачи для недели, начиная с weekStart (ISO string) */
-  async function fetchWeekTasks(boardId, weekStartIso){
-      const res = await fetch(`/api/boards/${boardId}/tasks/week?start=${weekStartIso}`);
-      if (!res.ok) return [];
-      return res.json();
-  }
-
-  /* Создать задачу (POST) */
-  async function createTask(boardId, dateIso, desc){
-      const params = new URLSearchParams();
-      params.set('date', dateIso);
-      params.set('desc', desc);
-      const res = await fetch(`/api/boards/${boardId}/tasks`, {
-          method: 'POST',
-          body: params
-      });
-      return res.ok ? await res.json() : null;
-  }
-
-  /* Рендер месячной сетки: строим массив дней включая пустые до первого дня недели */
-  function buildMonthDays(year, month){
-      // month: 1..12
-      const first = new Date(year, month-1, 1);
-      const last = new Date(year, month, 0); // последний день месяца
-      const days = [];
-      // в JS неделя: 0 воскресенье, 1 понедельник ... хотим начинать с понедельника
-      const firstWeekday = (first.getDay() + 6) % 7; // 0 = Monday
-      for(let i=0;i<firstWeekday;i++) days.push(null); // пустые клетки
-      for(let d=1; d<= last.getDate(); d++){
-          days.push(new Date(year, month-1, d));
-      }
-      // дополняем до кратного 7
-      while(days.length % 7 !== 0) days.push(null);
-      return days;
-  }
-
-  function renderMonthGrid(tasks){
-      const grid = document.getElementById('monthGrid');
-      grid.innerHTML = '';
-      const days = buildMonthDays(YEAR, MONTH);
-      const tasksByDate = {};
-      tasks.forEach(t => {
-          // t.date в формате yyyy-MM-dd
-          tasksByDate[t.date] = tasksByDate[t.date] || [];
-          tasksByDate[t.date].push(t);
-      });
-
-      days.forEach(dt => {
-          const cell = document.createElement('div');
-          cell.className = 'day-cell';
-          if (dt === null){
-              cell.style.background = '#f0f0f0';
-              grid.appendChild(cell);
-              return;
-          }
-          const iso = toIso(dt);
-          const header = document.createElement('div');
-          header.className = 'day-header';
-          header.innerHTML = `<span>${dt.getDate()}</span><span class="small">${['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][(dt.getDay()+6)%7]}</span>`;
-          cell.appendChild(header);
-
-          const tasksDiv = document.createElement('div');
-          tasksDiv.className = 'tasks';
-          const list = tasksByDate[iso] || [];
-          list.forEach(t => {
-              const tdiv = document.createElement('div');
-              tdiv.className = 'task';
-              tdiv.textContent = (t.memberName ? '['+t.memberName+'] ' : '') + t.description;
-              tasksDiv.appendChild(tdiv);
-          });
-          cell.appendChild(tasksDiv);
-
-          // форма добавления задачи
-          const form = document.createElement('div');
-          form.className = 'add-form';
-          const input = document.createElement('input');
-          input.type = 'text';
-          input.placeholder = 'Новая задача...';
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.textContent = '+';
-          btn.addEventListener('click', async () => {
-              const desc = input.value && input.value.trim();
-              if (!desc) return alert('Введите описание');
-              const created = await createTask(BOARD_ID, iso, desc);
-              if (created) {
-                  // перерендерить
-                  await loadAndRender();
-              } else {
-                  alert('Ошибка при создании');
-              }
-          });
-          form.appendChild(input);
-          form.appendChild(btn);
-          cell.appendChild(form);
-
-          grid.appendChild(cell);
-      });
-
-      document.getElementById('currentMonthLabel').textContent = `${YEAR}-${pad(MONTH)}`;
-  }
-
-  /* Рендер недели, weekStart — Date object */
-  async function renderWeek(weekStartDate){
-      const iso = toIso(weekStartDate);
-      const weekContainer = document.getElementById('weekContainer');
-      weekContainer.innerHTML = '';
-      const tasks = await fetchWeekTasks(BOARD_ID, iso);
-      // сгруппируем
-      const map = {};
-      tasks.forEach(t => { (map[t.date] = map[t.date] || []).push(t); });
-
-      for(let i=0;i<7;i++){
-          const d = new Date(weekStartDate);
-          d.setDate(weekStartDate.getDate() + i);
-          const div = document.createElement('div');
-          div.className = 'week-day';
-          div.innerHTML = `<div class="day-header">${d.toLocaleDateString()} <span class="small">${['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][(d.getDay()+6)%7]}</span></div>`;
-          const list = map[toIso(d)] || [];
-          list.forEach(t => {
-              const tdiv = document.createElement('div');
-              tdiv.className = 'task';
-              tdiv.textContent = (t.memberName ? '['+t.memberName+'] ' : '') + t.description;
-              div.appendChild(tdiv);
-          });
-          weekContainer.appendChild(div);
-      }
-  }
-
-  /* загрузка данных и рендер (месяц + неделя) */
-  async function loadAndRender(){
-      const monthTasks = await fetchMonthTasks(BOARD_ID, YEAR, MONTH);
-      renderMonthGrid(monthTasks);
-
-      // вычислим текущую неделю: возьмём сегодня, или первую видимую неделю (1 число)
-      // для удобства возьмём week, содержащую 1-е число месяца
-      const firstOfMonth = new Date(YEAR, MONTH-1, 1);
-      // найдем понедельник той недели
-      const weekday = (firstOfMonth.getDay()+6)%7; // 0..6 Monday..Sunday
-      const monday = new Date(firstOfMonth);
-      monday.setDate(firstOfMonth.getDate() - weekday);
-      renderWeek(monday);
-  }
-
-  /* навигация по месяцам */
-  document.getElementById('prevMonth').addEventListener('click', async () => {
-      MONTH--;
-      if (MONTH < 1) { MONTH = 12; YEAR--; }
-      await loadAndRender();
-  });
-  document.getElementById('nextMonth').addEventListener('click', async () => {
-      MONTH++;
-      if (MONTH > 12) { MONTH = 1; YEAR++; }
-      await loadAndRender();
-  });
-
-  /* старт */
-  loadAndRender();
+  /*<![CDATA[*/
+  const BOARD_ID = [[${board.id}]];
+  const YEAR = [[${board.year}]];
+  const MONTH = [[${board.month}]];
+  /*]]>*/
 </script>
+
+<!-- Подключаем весь JS из отдельного файла -->
+<script th:src="@{/js/board.js}"></script>
+
 </body>
 </html>

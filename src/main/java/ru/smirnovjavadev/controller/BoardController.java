@@ -37,14 +37,4 @@ public class BoardController {
         return ResponseEntity.ok(service.toDto(board));
     }
 
-    @GetMapping("/boards/{id}")
-    public String viewBoard(@PathVariable Long id, Model model) {
-        Board board = service.getById(id);
-        model.addAttribute("boardId", board.getId());
-        model.addAttribute("title", board.getTitle());
-        model.addAttribute("year", board.getYear());
-        model.addAttribute("month", board.getMonth());
-        return "board"; // board.html в src/main/resources/templates/
-    }
-
 }
