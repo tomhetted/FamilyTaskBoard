@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
   <title>Board</title>
@@ -22,7 +22,7 @@
 </head>
 <body>
 
-<h1 th:text="${board.title} + ' ' + ${board.year} + '-' + ${board.month}">Август 2025</h1>
+<h1 th:text="${board.title} + ' ' + ${board.year} + '-' + ${board.month}">Доска задач</h1>
 
 <div class="controls">
   <button id="prevMonth">Prev</button>
@@ -41,7 +41,7 @@
   </div>
 </div>
 
-<!-- Передаем ID доски в JS через Thymeleaf -->
+<!-- Передаем ID доски и дату в JS через Thymeleaf -->
 <script th:inline="javascript">
   /*<![CDATA[*/
   const BOARD_ID = [[${board.id}]];
@@ -50,7 +50,6 @@
   /*]]>*/
 </script>
 
-<!-- Подключаем весь JS из отдельного файла -->
 <script th:src="@{/js/board.js}"></script>
 
 </body>

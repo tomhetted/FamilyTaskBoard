@@ -1,84 +1,155 @@
-document.addEventListener('DOMContentLoaded', () => {
+// ==================== Рендер месяца ====================
+function renderMonthGrid(year, month) {
+    const grid = document.getElementById("monthGrid");
+    grid.innerHTML = "";
 
-    function pad(n) { return n < 10 ? '0'+n : n; }
-    function toIso(date) {
-        return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
+    // Первый день месяца
+    const firstDay = new Date(year, month - 1, 1);
+    const startDay = firstDay.getDay() === 0 ? 7 : firstDay.getDay(); // воскресенье = 7
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    // Рисуем пустые ячейки до начала месяца
+    for (let i = 1; i < startDay; i++) {
+        const emptyCell = document.createElement("div");
+        emptyCell.className = "day-cell";
+        grid.appendChild(emptyCell);
     }
 
-    async function fetchTasks(boardId) {
-        const resp = await fetch(`/api/boards/${boardId}/tasks`);
-        return resp.ok ? await resp.json() : [];
-    }
+    // Рисуем все дни месяца
+    for (let day = 1; day <= daysInMonth; day++) {
+        const cell = document.createElement("div");
+        cell.className = "day-cell";
 
-    async function createTask(boardId, date, desc) {
-        const resp = await fetch(`/api/boards/${boardId}/tasks`, {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({date: date, description: desc})
+        // Заголовок дня
+        const header = document.createElement("div");
+        header.className = "day-header";
+        header.textContent = day;
+        cell.appendChild(header);
+
+        // Контейнер задач
+        const tasksDiv = document.createElement("div");
+        tasksDiv.className = "tasks";
+        tasksDiv.id = `tasks-${year}-${month}-${day}`;
+        cell.appendChild(tasksDiv);
+
+        // Форма добавления задачи
+        const form = document.createElement("form");
+        form.className = "add-form";
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            const input = form.querySelector("input");
+            if (input.value.trim()) {
+                addTask(tasksDiv.id, input.value.trim());
+                input.value = "";
+            }
+        };
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.placeholder = "Добавить...";
+        form.appendChild(input);
+
+        const btn = document.createElement("button");
+        btn.type = "submit";
+        btn.textContent = "+";
+        form.appendChild(btn);
+
+        cell.appendChild(form);
+
+        grid.appendChild(cell);
+    }
+}
+
+// ==================== Рендер текущей недели ====================
+function renderWeekView(year, month) {
+    const container = document.getElementById("weekContainer");
+    container.innerHTML = "";
+
+    const today = new Date(year, month - 1, 1);
+    const currentDate = new Date();
+    let dayOfWeek = currentDate.getDay() === 0 ? 7 : currentDate.getDay(); // 1–7
+    const monday = new Date(currentDate);
+    monday.setDate(currentDate.getDate() - dayOfWeek + 1);
+
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(monday);
+        date.setDate(monday.getDate() + i);
+
+        const dayDiv = document.createElement("div");
+        dayDiv.className = "week-day";
+
+        const header = document.createElement("div");
+        header.className = "day-header";
+        header.textContent = date.toLocaleDateString("ru-RU", {
+            weekday: "short",
+            day: "numeric",
+            month: "numeric"
         });
-        return resp.ok;
+        dayDiv.appendChild(header);
+
+        const tasksDiv = document.createElement("div");
+        tasksDiv.className = "tasks";
+        tasksDiv.id = `week-${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+        dayDiv.appendChild(tasksDiv);
+
+        // Форма добавления задачи
+        const form = document.createElement("form");
+        form.className = "add-form";
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            const input = form.querySelector("input");
+            if (input.value.trim()) {
+                addTask(tasksDiv.id, input.value.trim());
+                input.value = "";
+            }
+        };
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.placeholder = "Добавить...";
+        form.appendChild(input);
+
+        const btn = document.createElement("button");
+        btn.type = "submit";
+        btn.textContent = "+";
+        form.appendChild(btn);
+
+        dayDiv.appendChild(form);
+
+        container.appendChild(dayDiv);
     }
+}
 
-    async function loadAndRender() {
-        const tasks = await fetchTasks(BOARD_ID);
-        const tasksByDate = {};
-        tasks.forEach(t => (tasksByDate[t.date] = tasksByDate[t.date] || []).push(t));
+// ==================== Добавление задачи ====================
+function addTask(containerId, text) {
+    const tasksDiv = document.getElementById(containerId);
+    if (!tasksDiv) return;
 
-        renderMonth(tasksByDate);
-        renderWeek(new Date(YEAR, MONTH-1, 1));
-    }
+    const task = document.createElement("div");
+    task.className = "task";
+    task.textContent = text;
+    tasksDiv.appendChild(task);
 
-    function renderMonth(tasksByDate) {
-        const grid = document.getElementById('monthGrid');
-        grid.innerHTML = '';
-        const firstDay = new Date(YEAR, MONTH-1, 1);
-        const lastDay = new Date(YEAR, MONTH, 0);
+    // TODO: сделать POST запрос на сервер для сохранения
+    // fetch(`/boards/${BOARD_ID}/tasks`, {...})
+}
 
-        for(let d=1; d<=lastDay.getDate(); d++){
-            const dt = new Date(YEAR, MONTH-1, d);
-            const cell = document.createElement('div'); cell.className='day-cell';
+// ==================== Навигация ====================
+document.getElementById("prevMonth").addEventListener("click", () => {
+    const newDate = new Date(YEAR, MONTH - 2, 1);
+    window.location.href = `/boards/${BOARD_ID}?year=${newDate.getFullYear()}&month=${newDate.getMonth() + 1}`;
+});
 
-            const header = document.createElement('div'); header.className='day-header';
-            header.textContent = dt.getDate() + ' ' + ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][(dt.getDay()+6)%7];
-            cell.appendChild(header);
+document.getElementById("nextMonth").addEventListener("click", () => {
+    const newDate = new Date(YEAR, MONTH, 1);
+    window.location.href = `/boards/${BOARD_ID}?year=${newDate.getFullYear()}&month=${newDate.getMonth() + 1}`;
+});
 
-            const tasksDiv = document.createElement('div'); tasksDiv.className='tasks';
-            (tasksByDate[toIso(dt)] || []).forEach(t => {
-                const tdiv = document.createElement('div'); tdiv.className='task';
-                tdiv.textContent = (t.memberName ? '['+t.memberName+'] ' : '') + t.description;
-                tasksDiv.appendChild(tdiv);
-            });
-            cell.appendChild(tasksDiv);
+// ==================== Запуск ====================
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("currentMonthLabel").textContent =
+        `${YEAR}-${MONTH}`;
 
-            const form = document.createElement('div'); form.className='add-form';
-            const input = document.createElement('input'); input.type='text'; input.placeholder='Новая задача...';
-            const btn = document.createElement('button'); btn.type='button'; btn.textContent='+';
-            btn.addEventListener('click', async ()=>{
-                const desc = input.value && input.value.trim();
-                if(!desc) return alert('Введите описание');
-                const created = await createTask(BOARD_ID, toIso(dt), desc);
-                if(created) loadAndRender(); else alert('Ошибка при создании');
-            });
-            form.appendChild(input); form.appendChild(btn);
-            cell.appendChild(form);
-
-            grid.appendChild(cell);
-        }
-
-        document.getElementById('currentMonthLabel').textContent = `${YEAR}-${pad(MONTH)}`;
-    }
-
-    async function renderWeek(startDate) {
-        const weekContainer = document.getElementById('weekContainer');
-        weekContainer.innerHTML='';
-        // Для простоты рендерим текущую неделю без запроса на сервер
-        for(let i=0;i<7;i++){
-            const d = new Date(startDate); d.setDate(startDate.getDate()+i);
-            const div = document.createElement('div'); div.className='week-day';
-            div.textContent = d.toLocaleDateString() + ' ' + ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][(d.getDay()+6)%7];
-            weekContainer.appendChild(div);
-        }
-    }
-
-    loadAndRender();
+    renderMonthGrid(YEAR, MONTH);
+    renderWeekView(YEAR, MONTH);
 });
