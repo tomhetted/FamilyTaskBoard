@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: todo
+      MYSQL_DATABASE: taskboard
       MYSQL_USER: todo
       MYSQL_PASSWORD: todopass
     ports:
