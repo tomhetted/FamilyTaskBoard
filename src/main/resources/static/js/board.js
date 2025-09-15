@@ -1,206 +1,222 @@
-// board.js — updated to match backend routes (/api/tasks/board/... and POST /api/tasks)
-
-const MONTH_NAMES = [
-  'Январь','Февраль','Март','Апрель','Май','Июнь',
-  'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'
-];
+// board.js — устойчивый рендер месяца и недели, безопасно читает параметры из data-атрибутов
 
 function pad(n){ return n < 10 ? '0' + n : '' + n; }
 function toIso(date){ return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`; }
 
-// --- API (routes adjusted to current controllers) ---
-async function fetchMonthTasks(boardId) {
-    try {
-        const res = await fetch(`/api/tasks/board/${boardId}/month`);
-        if (!res.ok) {
-            console.warn('fetchMonthTasks failed', res.status, await res.text());
-            return [];
-        }
-        return await res.json();
-    } catch (e) {
-        console.error('fetchMonthTasks', e);
-        return [];
+async function safeFetchJson(url) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (e) {
+    console.warn('fetch failed', url, e);
+    return [];
+  }
+}
+
+async function fetchMonthTasks(boardId, year, month){
+  if (!boardId) return [];
+  return await safeFetchJson(`/api/tasks/board/${boardId}/month?year=${year}&month=${month}`);
+}
+
+async function fetchWeekTasks(boardId, weekStartIso){
+  if (!boardId) return [];
+  return await safeFetchJson(`/api/tasks/board/${boardId}/week?start=${weekStartIso}`);
+}
+
+// Создаем задачу: контроллер ожидает JSON TaskDTO { boardId, date, description, memberId }
+async function createTask(boardId, dateIso, desc){
+  if (!boardId) { alert('Board not specified'); return null; }
+  try {
+    const payload = {
+      boardId: boardId,
+      date: dateIso,
+      description: desc,
+      memberId: null
+    };
+    const res = await fetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      console.warn('Create task failed', res.status);
+      return null;
     }
+    return await res.json();
+  } catch (e) {
+    console.warn('Create task error', e);
+    return null;
+  }
 }
 
-async function fetchWeekTasks(boardId, weekStartIso) {
-    try {
-        const res = await fetch(`/api/tasks/board/${boardId}/week?start=${encodeURIComponent(weekStartIso)}`);
-        if (!res.ok) {
-            console.warn('fetchWeekTasks failed', res.status, await res.text());
-            return [];
-        }
-        return await res.json();
-    } catch (e) {
-        console.error('fetchWeekTasks', e);
-        return [];
+function buildMonthDays(year, month){
+  const first = new Date(year, month-1, 1);
+  const last = new Date(year, month, 0);
+  const days = [];
+  const firstWeekday = (first.getDay() + 6) % 7; // 0 = Monday
+  for(let i=0;i<firstWeekday;i++) days.push(null);
+  for(let d=1; d<= last.getDate(); d++) days.push(new Date(year, month-1, d));
+  while(days.length % 7 !== 0) days.push(null);
+  return days;
+}
+
+function renderHeaderTitle(boardTitle, year, month) {
+  const h1 = document.getElementById('pageTitle');
+  if (h1) h1.textContent = `${boardTitle} ${year}-${month}`;
+  const lbl = document.getElementById('currentMonthLabel');
+  if (lbl) lbl.textContent = `${year}-${pad(month)}`;
+}
+
+async function renderMonthGrid(tasks, YEAR, MONTH, BOARD_ID) {
+  const grid = document.getElementById('monthGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const days = buildMonthDays(YEAR, MONTH);
+  const tasksByDate = {};
+  tasks.forEach(t => {
+    tasksByDate[t.date] = tasksByDate[t.date] || [];
+    tasksByDate[t.date].push(t);
+  });
+
+  days.forEach(dt => {
+    const cell = document.createElement('div');
+    cell.className = 'day-cell';
+    if (dt === null) {
+      cell.style.background = '#f0f0f0';
+      grid.appendChild(cell);
+      return;
     }
+    const iso = toIso(dt);
+    const header = document.createElement('div');
+    header.className = 'day-header';
+    header.innerHTML = `<span>${dt.getDate()}</span><span class="small">${['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][(dt.getDay()+6)%7]}</span>`;
+    cell.appendChild(header);
+
+    const tasksDiv = document.createElement('div');
+    tasksDiv.className = 'tasks';
+    (tasksByDate[iso] || []).forEach(t => {
+      const tdiv = document.createElement('div');
+      tdiv.className = 'task';
+      tdiv.textContent = (t.memberName ? '['+t.memberName+'] ' : '') + t.description;
+      tasksDiv.appendChild(tdiv);
+    });
+    cell.appendChild(tasksDiv);
+
+    const form = document.createElement('div');
+    form.className = 'add-form';
+    const input = document.createElement('input'); input.type = 'text'; input.placeholder = 'Добавить...';
+    const btn = document.createElement('button'); btn.type='button'; btn.textContent = '+';
+    btn.addEventListener('click', async () => {
+      const desc = input.value && input.value.trim();
+      if (!desc) return alert('Введите описание');
+      const created = await createTask(BOARD_ID, iso, desc);
+      if (created) loadAndRender(BOARD_ID); else alert('Ошибка при создании');
+    });
+    form.appendChild(input); form.appendChild(btn);
+    cell.appendChild(form);
+
+    grid.appendChild(cell);
+  });
 }
 
-// POST /api/tasks expects JSON TaskDTO in the body according to your TaskController
-async function createTaskApi(boardId, dateIso, desc, memberId) {
-    try {
-        const payload = {
-            boardId: boardId,
-            date: dateIso,
-            description: desc
-        };
-        if (memberId) payload.memberId = memberId;
+async function renderWeek(weekStartDate, BOARD_ID) {
+  const weekContainer = document.getElementById('weekContainer');
+  if (!weekContainer) return;
+  weekContainer.innerHTML = '';
+  const iso = toIso(weekStartDate);
+  const tasks = await fetchWeekTasks(BOARD_ID, iso);
+  const map = {};
+  tasks.forEach(t => { (map[t.date] = map[t.date] || []).push(t); });
 
-        const res = await fetch('/api/tasks', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) {
-            console.error('createTask failed', res.status, await res.text());
-            return null;
-        }
-        return await res.json();
-    } catch (e) {
-        console.error('createTaskApi', e);
-        return null;
-    }
-}
-
-// --- UI helpers (unchanged except calling corrected APIs) ---
-function updateHeader() {
-    const title = document.getElementById('boardTitle');
-    if (title) title.textContent = `${MONTH_NAMES[MONTH - 1]} ${YEAR}`;
-    document.title = `${MONTH_NAMES[MONTH - 1]} ${YEAR} - TaskBoard`;
-    const lbl = document.getElementById('currentMonthLabel');
-    if (lbl) lbl.textContent = `${YEAR}-${pad(MONTH)}`;
-}
-
-function buildMonthDays(year, month) {
-    const first = new Date(year, month - 1, 1);
-    const last = new Date(year, month, 0);
-    const days = [];
-    const firstWeekday = (first.getDay() + 6) % 7; // Monday=0
-    for (let i = 0; i < firstWeekday; i++) days.push(null);
-    for (let d = 1; d <= last.getDate(); d++) days.push(new Date(year, month - 1, d));
-    while (days.length % 7 !== 0) days.push(null);
-    return days;
-}
-
-function clearChildren(el) { while (el.firstChild) el.removeChild(el.firstChild); }
-
-function renderMonthGrid(tasks) {
-    const grid = document.getElementById('monthGrid');
-    if (!grid) return;
-    clearChildren(grid);
-
-    const days = buildMonthDays(YEAR, MONTH);
-    const tasksByDate = {};
-    (tasks || []).forEach(t => { tasksByDate[t.date] = tasksByDate[t.date] || []; tasksByDate[t.date].push(t); });
-
-    days.forEach(dt => {
-        const cell = document.createElement('div');
-        cell.className = 'day-cell';
-        if (dt === null) { cell.classList.add('empty'); grid.appendChild(cell); return; }
-
-        const iso = toIso(dt);
-        const header = document.createElement('div');
-        header.className = 'day-header';
-        const weekday = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][(dt.getDay()+6)%7];
-        header.innerHTML = `<span>${dt.getDate()}</span><span class="small">${weekday}</span>`;
-        cell.appendChild(header);
-
-        const tasksDiv = document.createElement('div'); tasksDiv.className = 'tasks';
-        const list = tasksByDate[iso] || [];
-        list.forEach(t => {
-            const tdiv = document.createElement('div'); tdiv.className = 'task';
-            tdiv.textContent = (t.memberName ? '[' + t.memberName + '] ' : '') + t.description;
-            tasksDiv.appendChild(tdiv);
-        });
-        cell.appendChild(tasksDiv);
-
-        const form = document.createElement('div'); form.className = 'add-form';
-        const input = document.createElement('input'); input.type = 'text'; input.placeholder = 'Новая задача...';
-        const btn = document.createElement('button'); btn.type = 'button'; btn.textContent = '+'; btn.title = 'Добавить задачу';
-        btn.addEventListener('click', async () => {
-            const desc = input.value && input.value.trim();
-            if (!desc) return alert('Введите описание задачи');
-            btn.disabled = true;
-            const created = await createTaskApi(BOARD_ID, iso, desc, null);
-            btn.disabled = false;
-            if (created) { input.value = ''; await loadAndRender(); } else alert('Ошибка при создании задачи');
-        });
-        form.appendChild(input); form.appendChild(btn); cell.appendChild(form);
-
-        grid.appendChild(cell);
+  for(let i=0;i<7;i++){
+    const d = new Date(weekStartDate);
+    d.setDate(weekStartDate.getDate() + i);
+    const div = document.createElement('div');
+    div.className = 'week-day';
+    div.innerHTML = `<div class="day-header">${d.toLocaleDateString()} <span class="small">${['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][(d.getDay()+6)%7]}</span></div>`;
+    const list = map[toIso(d)] || [];
+    list.forEach(t => {
+      const tdiv = document.createElement('div');
+      tdiv.className = 'task';
+      tdiv.textContent = (t.memberName ? '['+t.memberName+'] ' : '') + t.description;
+      div.appendChild(tdiv);
     });
 
-    updateHeader();
+    // add form for week-day
+    const form = document.createElement('div');
+    form.className = 'add-form';
+    const input = document.createElement('input'); input.type='text'; input.placeholder='Добавить...';
+    const btn = document.createElement('button'); btn.type='button'; btn.textContent = '+';
+    const dayIso = toIso(d);
+    btn.addEventListener('click', async () => {
+      const desc = input.value && input.value.trim();
+      if (!desc) return alert('Введите описание');
+      const created = await createTask(BOARD_ID, dayIso, desc);
+      if (created) loadAndRender(BOARD_ID); else alert('Ошибка при создании');
+    });
+    form.appendChild(input); form.appendChild(btn);
+    div.appendChild(form);
+
+    weekContainer.appendChild(div);
+  }
 }
 
-async function renderWeek(weekStartDate) {
-    const iso = toIso(weekStartDate);
-    const weekContainer = document.getElementById('weekContainer');
-    if (!weekContainer) return;
-    clearChildren(weekContainer);
+async function loadAndRender(BOARD_ID) {
+  // прочитаем YEAR/MONTH из DOM каждый раз (вдруг изменились)
+  const boardEl = document.getElementById('boardData');
+  let YEAR = parseInt(boardEl.dataset.year) || (new Date()).getFullYear();
+  let MONTH = parseInt(boardEl.dataset.month) || ((new Date()).getMonth() + 1);
+  let TITLE = boardEl.dataset.title || 'TaskBoard';
 
-    const tasks = await fetchWeekTasks(BOARD_ID, iso);
-    const map = {};
-    (tasks || []).forEach(t => { (map[t.date] = map[t.date] || []).push(t); });
+  renderHeaderTitle(TITLE, YEAR, MONTH);
 
-    for (let i = 0; i < 7; i++) {
-        const d = new Date(weekStartDate);
-        d.setDate(weekStartDate.getDate() + i);
-        const dayIso = toIso(d);
-        const div = document.createElement('div'); div.className = 'week-day';
-        const weekday = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'][(d.getDay()+6)%7];
-        const header = document.createElement('div'); header.className = 'day-header';
-        header.innerHTML = `<span>${d.toLocaleDateString()}</span><span class="small">${weekday}</span>`;
-        div.appendChild(header);
+  const monthTasks = await fetchMonthTasks(BOARD_ID, YEAR, MONTH);
+  await renderMonthGrid(monthTasks, YEAR, MONTH, BOARD_ID);
 
-        const list = map[dayIso] || [];
-        list.forEach(t => {
-            const tdiv = document.createElement('div'); tdiv.className = 'task';
-            tdiv.textContent = (t.memberName ? '[' + t.memberName + '] ' : '') + t.description;
-            div.appendChild(tdiv);
-        });
-
-        const form = document.createElement('div'); form.className = 'add-form';
-        const input = document.createElement('input'); input.type = 'text'; input.placeholder = 'Новая задача...';
-        const btn = document.createElement('button'); btn.type = 'button'; btn.textContent = '+'; btn.title = 'Добавить задачу в эту дату';
-        btn.addEventListener('click', async () => {
-            const desc = input.value && input.value.trim();
-            if (!desc) return alert('Введите описание задачи');
-            btn.disabled = true;
-            const created = await createTaskApi(BOARD_ID, dayIso, desc, null);
-            btn.disabled = false;
-            if (created) { input.value = ''; await loadAndRender(); } else alert('Ошибка при создании задачи');
-        });
-        form.appendChild(input); form.appendChild(btn); div.appendChild(form);
-
-        weekContainer.appendChild(div);
-    }
-}
-
-async function loadAndRender() {
-    if (!BOARD_ID) { console.warn('BOARD_ID not set'); return; }
-    const monthTasks = await fetchMonthTasks(BOARD_ID);
-    renderMonthGrid(monthTasks);
-
-    const firstOfMonth = new Date(YEAR, MONTH - 1, 1);
-    const weekday = (firstOfMonth.getDay() + 6) % 7;
-    const monday = new Date(firstOfMonth); monday.setDate(firstOfMonth.getDate() - weekday);
-    await renderWeek(monday);
+  // current week: Monday of today
+  const today = new Date();
+  const weekday = (today.getDay() + 6) % 7;
+  const monday = new Date(today); monday.setDate(today.getDate() - weekday);
+  await renderWeek(monday, BOARD_ID);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (typeof YEAR === 'undefined' || typeof MONTH === 'undefined') {
-        const now = new Date(); YEAR = now.getFullYear(); MONTH = now.getMonth() + 1;
-    }
+  const boardEl = document.getElementById('boardData');
+  const BOARD_ID = parseInt(boardEl.dataset.boardId) || 0;
+  const YEAR_INIT = parseInt(boardEl.dataset.year) || (new Date()).getFullYear();
+  const MONTH_INIT = parseInt(boardEl.dataset.month) || ((new Date()).getMonth() + 1);
+  const TITLE_INIT = boardEl.dataset.title || 'TaskBoard';
 
-    document.getElementById('prevMonth').addEventListener('click', async () => {
-        MONTH--; if (MONTH < 1) { MONTH = 12; YEAR--; } await loadAndRender();
-    });
-    document.getElementById('nextMonth').addEventListener('click', async () => {
-        MONTH++; if (MONTH > 12) { MONTH = 1; YEAR++; } await loadAndRender();
-    });
+  // начальный заголовок
+  renderHeaderTitle(TITLE_INIT, YEAR_INIT, MONTH_INIT);
 
-    loadAndRender();
+  // кнопки навигации
+  const prev = document.getElementById('prevMonth');
+  const next = document.getElementById('nextMonth');
+
+  // хранить текущие значения локально чтобы prev/next меняли их
+  let currentYear = YEAR_INIT;
+  let currentMonth = MONTH_INIT;
+
+  prev.addEventListener('click', async () => {
+    currentMonth--;
+    if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+    // обновим dataset на элементе — чтобы loadAndRender читал актуальные
+    boardEl.dataset.year = currentYear;
+    boardEl.dataset.month = currentMonth;
+    await loadAndRender(BOARD_ID);
+  });
+
+  next.addEventListener('click', async () => {
+    currentMonth++;
+    if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+    boardEl.dataset.year = currentYear;
+    boardEl.dataset.month = currentMonth;
+    await loadAndRender(BOARD_ID);
+  });
+
+  // initial load
+  loadAndRender(BOARD_ID);
 });

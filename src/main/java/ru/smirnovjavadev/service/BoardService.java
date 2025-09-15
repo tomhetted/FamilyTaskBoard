@@ -56,4 +56,8 @@ public class BoardService {
                 .title(board.getTitle())
                 .build();
     }
+
+    public Optional<Board> findAny() {
+        return boardRepository.findAll().stream().findFirst();
+    }
 }
