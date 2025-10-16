@@ -11,39 +11,31 @@ import java.time.LocalDate;
 @Table(name = "task")
 @AllArgsConstructor
 @Builder
+@NoArgsConstructor
 public class Task {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "board_id")
     private Board board;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
 
-    @Column(name = "date")
+    @Column(name = "date", nullable = false)
     private LocalDate date;
 
     @Column(name = "description")
     private String description;
 
-    @Enumerated(EnumType.STRING) // <--- enum сохраняется в БД как строка
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private TaskStatus status;
 
-    public Task() {}
-
-    public Task(Board board, Member member, LocalDate date, String description, TaskStatus status) {
-        this.board = board;
-        this.member = member;
-        this.date = date;
-        this.description = description;
-        this.status = status;
-    }
 
     // Геттеры и сеттеры
     public Long getId() { return id; }

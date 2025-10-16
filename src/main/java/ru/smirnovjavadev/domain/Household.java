@@ -8,7 +8,9 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 @Entity
-@Table(name = "household")
+@Table(name = "household",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"name"})} // опция: уникальность имени
+)
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -18,9 +20,10 @@ public class Household {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "household", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "household", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Board> boards;
 
     // Геттеры и сеттеры

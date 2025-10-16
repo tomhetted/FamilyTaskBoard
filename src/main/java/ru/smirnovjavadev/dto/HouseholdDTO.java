@@ -1,10 +1,15 @@
 package ru.smirnovjavadev.dto;
 
+
 import ru.smirnovjavadev.domain.Household;
+
+import javax.validation.constraints.NotBlank;
 
 public class HouseholdDTO {
 
     private Long id;
+
+    @NotBlank(message = "name must not be blank")
     private String name;
 
     public HouseholdDTO() {}

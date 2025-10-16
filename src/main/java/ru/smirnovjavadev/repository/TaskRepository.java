@@ -10,5 +10,5 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     List<Task> findAllByBoardId(Long boardId);
 
-    List<Task> findAllByBoardIdAndDateBetween(Long boardId, LocalDate start, LocalDate end);
+    List<Task> findAllByBoardIdAndDateBetweenOrderByDateAsc(Long boardId, LocalDate start, LocalDate end);
 }

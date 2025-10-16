@@ -1,6 +1,7 @@
 package ru.smirnovjavadev.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.smirnovjavadev.domain.Household;
 import ru.smirnovjavadev.domain.Member;
 import ru.smirnovjavadev.repository.HouseholdRepository;
@@ -19,31 +20,40 @@ public class MemberService {
         this.householdRepository = householdRepository;
     }
 
-    // Получить участника по ID
+    @Transactional(readOnly = true)
     public Member getById(Long id) {
         return memberRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Member not found"));
     }
 
-    // Создать участника, привязанного к household
+    @Transactional
     public Member create(Long householdId, String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Name is required");
+        }
         Household household = householdRepository.findById(householdId)
                 .orElseThrow(() -> new IllegalArgumentException("Household not found"));
 
-        Member member = new Member();
-        member.setName(name);
-        member.setHousehold(household);
+        // проверяем дубликаты в household
+        if (memberRepository.existsByHouseholdIdAndName(householdId, name)) {
+            throw new IllegalArgumentException("Member with this name already exists in household");
+        }
+
+        Member member = Member.builder()
+                .name(name)
+                .household(household)
+                .build();
 
         return memberRepository.save(member);
     }
 
-    // Получить всех участников
+    @Transactional(readOnly = true)
     public List<Member> getAll() {
         return memberRepository.findAll();
     }
 
-    // Получить всех участников конкретного household
+    @Transactional(readOnly = true)
     public List<Member> getAllByHousehold(Long householdId) {
-        return memberRepository.findAllByHouseholdId(householdId);
+        return memberRepository.findAllByHouseholdIdOrderByNameAsc(householdId);
     }
 }

@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 @Entity
-@Table(name = "board")
+@Table(name = "board", uniqueConstraints = {@UniqueConstraint(columnNames = {"household_id","year","month"})})
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -22,11 +22,11 @@ public class Board {
     private int month;
     private String title;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "household_id")
     private Household household;
 
-    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Task> tasks;
 
     // Геттеры и сеттеры

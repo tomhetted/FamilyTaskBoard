@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.smirnovjavadev.dto.TaskDTO;
 import ru.smirnovjavadev.domain.Task;
+import ru.smirnovjavadev.domain.TaskStatus;
 import ru.smirnovjavadev.service.TaskService;
 
 import java.time.LocalDate;
@@ -21,14 +22,12 @@ public class TaskController {
         this.service = service;
     }
 
-    // Получение конкретной задачи по ID
     @GetMapping("/{id}")
     public ResponseEntity<TaskDTO> get(@PathVariable Long id) {
         Task task = service.getById(id);
         return ResponseEntity.ok(TaskDTO.fromEntity(task));
     }
 
-    // Создание новой задачи через JSON
     @PostMapping
     public ResponseEntity<TaskDTO> create(@RequestBody TaskDTO taskDto) {
         Task task = service.create(
@@ -40,10 +39,33 @@ public class TaskController {
         return ResponseEntity.ok(TaskDTO.fromEntity(task));
     }
 
-    // Получение задач на месяц по ID доски
+    // Обновление задачи
+    @PutMapping("/{id}")
+    public ResponseEntity<TaskDTO> update(@PathVariable Long id, @RequestBody TaskDTO taskDto) {
+        Task task = service.update(
+                id,
+                taskDto.getDate(),
+                taskDto.getDescription(),
+                taskDto.getMemberId(),
+                taskDto.getStatus()
+        );
+        return ResponseEntity.ok(TaskDTO.fromEntity(task));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // Получение задач на месяц — теперь принимает from/to в ISO формате (опционально)
     @GetMapping("/board/{boardId}/month")
-    public ResponseEntity<List<TaskDTO>> forMonth(@PathVariable Long boardId) {
-        List<TaskDTO> tasks = service.forMonth(boardId).stream()
+    public ResponseEntity<List<TaskDTO>> forMonth(
+            @PathVariable Long boardId,
+            @RequestParam(value = "from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(value = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+
+        List<TaskDTO> tasks = service.forMonth(boardId, from, to).stream()
                 .map(TaskDTO::fromEntity)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(tasks);

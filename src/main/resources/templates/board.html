@@ -3,22 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title th:text="${title} ?: 'TaskBoard'">Board</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 16px; }
-    .container { display: flex; gap: 16px; }
-    .month-grid { display: grid; grid-template-columns: repeat(7, 120px); grid-auto-rows: 100px; gap: 6px; width: calc(7 * 120px + 6 * 6px); }
-    .day-cell { border: 1px solid #ccc; padding: 6px; background: #fafafa; display: flex; flex-direction: column; gap: 6px; overflow: hidden; }
-    .day-header { font-weight: bold; font-size: 0.9em; display:flex; justify-content:space-between; }
-    .tasks { flex: 1; overflow-y: auto; font-size:0.9em; }
-    .task { background: #fff; padding:4px; margin-bottom:4px; border-radius:4px; border:1px solid #eee; }
-    .week-column { width: 300px; }
-    .week-day { border: 1px solid #ddd; padding: 8px; margin-bottom: 8px; background: #fff; }
-    .controls { margin-bottom: 12px; }
-    .small { font-size: 0.85em; color:#666; }
-    button { cursor: pointer; }
-    .add-form { display:flex; gap:6px; margin-top:6px; }
-    .add-form input[type="text"]{ flex:1; }
-  </style>
+  <link rel="stylesheet" th:href="@{/css/board.css}">
 </head>
 <body>
 

@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public interface BoardRepository extends JpaRepository<Board, Long> {
 
-    List<Board> findAllByHouseholdId(Long householdId);
+    List<Board> findAllByHouseholdIdOrderByYearDescMonthDesc(Long householdId);
 
     Optional<Board> findByHouseholdIdAndYearAndMonth(Long householdId, int year, int month);
 }
