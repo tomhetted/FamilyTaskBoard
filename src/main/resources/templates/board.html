@@ -14,20 +14,67 @@
 
 <h1 id="pageTitle" th:text="${title} + ' ' + ${year} + '-' + ${month}">Board</h1>
 
-<div class="controls">
+<div class="controls" style="text-align:center;">
   <button id="prevMonth">Prev</button>
   <button id="nextMonth">Next</button>
   <span class="small" id="currentMonthLabel"></span>
+  <button id="openCreateBoard">New Board</button>
 </div>
 
 <div class="container">
   <div>
+    <div class="weekday-row" id="weekdayRow">
+      <div class="weekday">Пн</div>
+      <div class="weekday">Вт</div>
+      <div class="weekday">Ср</div>
+      <div class="weekday">Чт</div>
+      <div class="weekday">Пт</div>
+      <div class="weekday">Сб</div>
+      <div class="weekday">Вс</div>
+    </div>
+
     <div class="month-grid" id="monthGrid"></div>
   </div>
 
   <div class="week-column">
     <h3>Текущая неделя</h3>
     <div id="weekContainer"></div>
+  </div>
+</div>
+
+<!-- ======= Модальное окно создания доски ======= -->
+<div class="modal" id="createBoardModal">
+  <div class="modal-content">
+    <h3>Создать новую доску</h3>
+
+    <div class="form-row">
+      <label>Заголовок</label>
+      <input id="cb-title" type="text" placeholder="Название (необязательно)">
+    </div>
+
+    <div class="form-row">
+      <label>Год</label>
+      <input id="cb-year" type="number" min="1900" max="3000">
+      <label>Месяц</label>
+      <input id="cb-month" type="number" min="1" max="12">
+    </div>
+
+    <div class="form-row">
+      <label>Домохозяйство</label>
+      <select id="cb-household-select">
+        <option value="">Загрузка...</option>
+      </select>
+      <div id="cb-new-household-row" style="display:none; width:100%;">
+        <input id="cb-new-household-name" type="text" placeholder="Название нового домохозяйства">
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button id="cb-create-btn" type="button">Создать</button>
+      <button id="cb-cancel-btn" type="button">Отмена</button>
+    </div>
+
+    <div id="cb-error" style="display:none"></div>
   </div>
 </div>
 
