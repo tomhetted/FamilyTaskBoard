@@ -70,6 +70,27 @@ public class HouseholdController {
         }
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        try {
+            service.delete(id);
+            // возвращаем 204 без тела — REST стандарт
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException ex) {
+            String msg = ex.getMessage() != null ? ex.getMessage() : "Invalid request";
+            if (msg.toLowerCase().contains("not found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorPayload(404, msg));
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorPayload(400, msg));
+        } catch (DataIntegrityViolationException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(errorPayload(409, "Cannot delete household with related data"));
+        } catch (Exception ex) {
+            log.error("Unexpected error while deleting household {}", id, ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorPayload(500, "Internal server error"));
+        }
+    }
+
+
     private static ErrorPayload errorPayload(int status, String message) {
         return new ErrorPayload(status, message);
     }

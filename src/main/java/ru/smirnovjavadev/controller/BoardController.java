@@ -85,6 +85,30 @@ public class BoardController {
     }
 
     /**
+     * DELETE /api/boards/{id}
+     * Deletes a board by id.
+     * Responses:
+     *   204 No Content - successfully deleted
+     *   404 Not Found - board not found
+     *   500 Internal Server Error - unexpected error
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        try {
+            boolean deleted = service.deleteById(id);
+            if (deleted) {
+                return ResponseEntity.noContent().build(); // 204 No Content
+            } else {
+                return error(HttpStatus.NOT_FOUND, "Board not found with id=" + id);
+            }
+        } catch (Exception ex) {
+            log.error("Unexpected error while deleting board id={}", id, ex);
+            return error(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
+        }
+    }
+
+
+    /**
      * GET /api/boards/household/{householdId}/year/{year}/month/{month}
      * If board exists -> 200 OK with DTO
      * If not -> creates and returns 201 Created with Location header

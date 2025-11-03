@@ -83,6 +83,21 @@ public class MemberController {
         }
     }
 
+    // DELETE /api/members/{id} -> 204 / 404 / 500
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        try {
+            service.delete(id);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error(404, ex.getMessage()));
+        } catch (Exception ex) {
+            log.error("Unexpected error while deleting member {}", id, ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(error(500, "Internal server error"));
+        }
+    }
+
     private static ErrorPayload error(int status, String message) {
         return new ErrorPayload(status, message == null ? "" : message);
     }

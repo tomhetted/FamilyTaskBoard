@@ -1,0 +1,344 @@
+/* ======= Общие стили (обновлённые) ======= */
+* { box-sizing: border-box; }
+
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f3f6f4; /* светлый салатовый фон */
+    margin: 0;
+    padding: 20px;
+}
+
+h1, h2, h3 {
+    text-align: center;
+    margin: 10px 0 20px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Кнопки навигации */
+.controls button {
+    background: #a0d6b4; /* мягкий салатовый */
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.controls button:hover {
+    background: #88c99e; /* немного темнее */
+}
+
+/* ======= Контейнер месяца + недели ======= */
+/* ограничиваем общую ширину и делаем колонку недели фиксированной */
+.container {
+    display: flex;           /* горизонтальный layout */
+    gap: 20px;
+    max-width: 1200px;      /* уменьшили, чтобы календарь не становился слишком широким */
+    margin: 0 auto;
+    align-items: flex-start;
+    padding: 0 10px;
+}
+
+/* Левый блок хранит weekday-row + month-grid (в разметке у тебя это просто контейнер) */
+.container > div:first-child {
+    flex: 1 1 auto;
+    min-width: 0; /* важно, чтобы содержимое могло корректно сжиматься */
+}
+
+/* ======= Weekday header & empty day styling ====== */
+.weekday-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+  margin: 0 0 8px 0;
+  padding: 0;
+  width: 100%;
+  min-width: 0;
+}
+
+.weekday {
+  text-align: center;
+  font-weight: 700;
+  color: #2d572c;
+  padding: 8px 6px;
+  background: transparent;
+  font-size: 13px;
+}
+
+/* ======= Сетка месяца ======= */
+/* гибкая сетка: минимальная ширина ячейки 80px, максимум — равномерное распределение */
+.month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(80px, 1fr));
+    gap: 10px;
+    flex: 1 1 auto; /* занимает доступное место внутри левой колонки */
+    min-width: 0;   /* критично для корректного сжатия в flex-контейнере */
+}
+
+/* ======= Ячейка дня месяца ======= */
+.day-cell {
+    background: #eaf6ea; /* светлый салатовый */
+    border: 1px solid #c2e2c2;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    padding: 6px;
+    font-size: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    transition: transform 0.1s, background 0.2s;
+    overflow: hidden; /* предотвращает выход содержимого */
+}
+
+.day-cell:hover {
+    transform: scale(1.02);
+    background: #d1e9d1; /* немного темнее при наведении */
+}
+
+/* Пустая/заполнительная ячейка (неактивная) */
+.day-cell.empty {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  min-height: 40px;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* Заголовок дня */
+.day-header {
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #2d572c;
+}
+
+/* ======= Контейнер задач ======= */
+/* важно: min-height:0 и flex:1 1 auto — чтобы прокрутка внутри работала корректно */
+.tasks {
+    flex: 1 1 auto; /* занимает свободное место */
+    min-height: 0;  /* разрешаем сокращение по высоте внутри flex-контейнера */
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+/* ======= Форма добавления ======= */
+.add-form {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.add-form input {
+    flex: 1;
+    min-width: 0; /* чтобы input корректно сжимался в узких ячейках */
+    padding: 6px 8px;
+    border: 1px solid #c2e2c2;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.add-form button {
+    background: #bfa0e0; /* мягкий сиреневый */
+    border: none;
+    color: #fff;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.add-form button:hover {
+    background: #a386d1; /* темнее при наведении */
+}
+
+/* ======= Столбец недели (фиксированная ширина) ======= */
+.week-column {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 260px; /* фиксированная ширина правой колонки */
+    max-width: 260px;
+    min-width: 200px;
+}
+
+/* Ячейка дня недели */
+.week-day {
+    background: #f3eaf6; /* светлый сиреневый */
+    border: 1px solid #d2c2e0;
+    border-radius: 8px;
+    padding: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+.week-day .day-header {
+    color: #5a3b73;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+/* внутри дни недели — прокручиваемая область задач, если нужно */
+.week-day .tasks { overflow-y: auto; margin-top: 6px; }
+
+/* ======= Задачи ======= */
+.task {
+    background: #d1f0d1; /* салатовый элемент */
+    border-left: 4px solid #4caf50;
+    padding: 4px 6px;
+    margin: 4px 0;
+    border-radius: 4px;
+    font-size: 13px;
+    text-align: left;
+}
+
+.task:hover {
+    background: #b8e5b8;
+}
+
+/* ======= Модальное окно — создание новой доски (в стиле страницы) ======= */
+.modal {
+    position: fixed;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background: rgba(17, 33, 17, 0.28); /* полупрозрачный темный фон */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200;
+    padding: 20px;
+}
+
+.modal-content {
+    background: #ffffff;
+    padding: 18px;
+    border-radius: 10px;
+    width: 480px;
+    max-width: 96%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    border: 1px solid rgba(140, 200, 150, 0.12);
+}
+
+/* Заголовок внутри модала */
+.modal-content h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+    color: #2d572c; /* темно-зелёный заголовок */
+    text-align: left;
+}
+
+/* Строка формы похожа на существующие form-row / input-ы */
+.form-row {
+    margin: 8px 0;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.form-row label {
+    min-width: 88px;
+    color: #3a5c3a;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Входы и селекты в едином стиле с остальными полями */
+.form-row input[type="text"],
+.form-row input[type="number"],
+.form-row select {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid #c2e2c2;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fff;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.form-row input[type="text"]:focus,
+.form-row input[type="number"]:focus,
+.form-row select:focus {
+    outline: none;
+    border-color: #88c99e;
+    box-shadow: 0 0 0 3px rgba(136,201,158,0.12);
+}
+
+/* Новая строка для ввода названия нового домохозяйства */
+#cb-new-household-row {
+    display: flex;
+    margin-top: 6px;
+}
+
+#cb-new-household-row input {
+    flex: 1;
+}
+
+/* Кнопки модала — в стиле остальных кнопок, но компактнее */
+.form-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.form-actions button {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    border: none;
+    cursor: pointer;
+    transition: background .18s ease, transform .06s ease;
+}
+
+/* Primary — создать */
+#cb-create-btn {
+    background: #a0d6b4; /* как .controls button */
+    color: #fff;
+}
+#cb-create-btn:hover { background: #88c99e; transform: translateY(-1px); }
+
+/* Secondary — отмена */
+#cb-cancel-btn {
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #e6e6e6;
+}
+#cb-cancel-btn:hover { background: #e9e9e9; }
+
+/* Ошибки/подсказки */
+#cb-error {
+    color: #b00020;
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+/* Небольшая адаптация: кнопка "New board" в .controls — чтобы не выбивалась */
+.controls #openCreateBoard {
+    background: #bfa0e0; /* мягкий сиреневый, как .add-form button */
+    color: #fff;
+}
+.controls #openCreateBoard:hover { background: #a386d1; }
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .month-grid { grid-template-columns: repeat(7, minmax(60px, 1fr)); }
+  .container { gap: 12px; padding: 0 8px; }
+  .week-column { flex: 0 0 200px; max-width: 200px; min-width: 160px; }
+  .weekday-row { gap: 8px; }
+}
+
+@media (max-width: 520px) {
+    .modal-content { width: 96%; padding: 14px; border-radius: 8px; }
+    .form-row { flex-direction: column; align-items: stretch; }
+    .form-row label { min-width: auto; margin-bottom: 4px; }
+    .container { flex-direction: column; }
+    .week-column { width: 100%; max-width: none; min-width: 0; order: 2; }
+    .container > div:first-child { order: 1; }
+}

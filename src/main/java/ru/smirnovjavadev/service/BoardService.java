@@ -60,6 +60,17 @@ public class BoardService {
                 });
     }
 
+    @Transactional
+    public boolean deleteById(Long id) {
+        Optional<Board> boardOpt = boardRepository.findById(id);
+        if (boardOpt.isPresent()) {
+            boardRepository.delete(boardOpt.get());
+            return true;
+        }
+        return false;
+    }
+
+
     // Добавляем метод для преобразования entity в DTO
     public BoardDTO toDto(Board board) {
         return BoardDTO.builder()
