@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -23,11 +24,12 @@ public class Board {
     private String title;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "household_id")
+    @JoinColumn(name = "household_id", nullable = false)
     private Household household;
 
     @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Task> tasks;
+    @Builder.Default
+    private List<Task> tasks = new ArrayList<>();
 
     // Геттеры и сеттеры
     public Long getId() { return id; }

@@ -5,11 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "member",
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"household_id","name"})} // рекомендовано
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"household_id","name"})}
 )
 @AllArgsConstructor
 @NoArgsConstructor
@@ -23,12 +24,13 @@ public class Member {
     @Column(nullable = false)
     private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY)           // явно LAZY
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "household_id", nullable = false)
     private Household household;
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Task> tasks;
+    @Builder.Default
+    private List<Task> tasks = new ArrayList<>();
 
     // Геттеры и сеттеры
     public Long getId() { return id; }

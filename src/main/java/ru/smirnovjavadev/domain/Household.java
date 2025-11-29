@@ -5,11 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "household",
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"name"})} // опция: уникальность имени
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"name"})}
 )
 @AllArgsConstructor
 @NoArgsConstructor
@@ -24,7 +25,12 @@ public class Household {
     private String name;
 
     @OneToMany(mappedBy = "household", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Board> boards;
+    @Builder.Default
+    private List<Board> boards = new ArrayList<>();
+
+    @OneToMany(mappedBy = "household", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Member> members = new ArrayList<>();
 
     // Геттеры и сеттеры
     public Long getId() { return id; }
@@ -35,4 +41,7 @@ public class Household {
 
     public List<Board> getBoards() { return boards; }
     public void setBoards(List<Board> boards) { this.boards = boards; }
+
+    public List<Member> getMembers() { return members; }
+    public void setMembers(List<Member> members) { this.members = members; }
 }
