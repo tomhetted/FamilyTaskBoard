@@ -124,13 +124,15 @@ public class BoardController {
                                          @PathVariable int year,
                                          @PathVariable int month) {
         try {
-            // Try to find existing board first (service may expose convenience method)
-            // We call getOrCreate and then determine if it existed by checking repository if needed.
-            Board board = service.getOrCreate(householdId, year, month);
+            BoardService.BoardAndCreated result = service.getOrCreateWithFlag(householdId, year, month);
+            Board board = result.getBoard();
             BoardDTO dto = service.toDto(board);
-            // Heuristic: if id was just created, return 201. We can't know for sure without service support,
-            // so return 200. If you want 201 on creation, implement service.getOrCreate to indicate creation.
-            return ResponseEntity.ok(dto);
+            if (result.isCreated()) {
+                URI location = URI.create("/api/boards/" + board.getId());
+                return ResponseEntity.created(location).body(dto); // 201
+            } else {
+                return ResponseEntity.ok(dto); // 200
+            }
         } catch (DataIntegrityViolationException ex) {
             log.warn("Data integrity violation on getOrCreate board: {}", ex.getMessage());
             return error(HttpStatus.CONFLICT, "Resource conflict (possible duplicate)");
