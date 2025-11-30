@@ -8,6 +8,7 @@ import ru.smirnovjavadev.dto.BoardDTO;
 import ru.smirnovjavadev.repository.BoardRepository;
 import ru.smirnovjavadev.repository.HouseholdRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -81,6 +82,14 @@ public class BoardService {
                 .title(board.getTitle())
                 .build();
     }
+
+    public List<BoardDTO> getBoardsByHousehold(Long householdId) {
+        List<Board> boards = boardRepository.findByHouseholdId(householdId);
+        return boards.stream()
+                .map(this::toDto)
+                .toList();
+    }
+
 
     public Optional<Board> findAny() {
         return boardRepository.findAll().stream().findFirst();

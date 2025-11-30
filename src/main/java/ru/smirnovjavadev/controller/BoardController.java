@@ -152,9 +152,7 @@ public class BoardController {
     @GetMapping("/household/{householdId}")
     public ResponseEntity<?> listByHousehold(@PathVariable Long householdId) {
         try {
-            List<BoardDTO> list = service.findAny() // temporary: replace with a real list method in service
-                    .map(b -> List.of(service.toDto(b)))
-                    .orElseGet(List::of);
+            List<BoardDTO> list = service.getBoardsByHousehold(householdId);
             return ResponseEntity.ok(list);
         } catch (IllegalArgumentException ex) {
             return error(HttpStatus.BAD_REQUEST, ex.getMessage());
