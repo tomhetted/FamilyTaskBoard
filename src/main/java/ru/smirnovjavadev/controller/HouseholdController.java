@@ -74,7 +74,6 @@ public class HouseholdController {
     public ResponseEntity<?> delete(@PathVariable Long id) {
         try {
             service.delete(id);
-            // возвращаем 204 без тела — REST стандарт
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException ex) {
             String msg = ex.getMessage() != null ? ex.getMessage() : "Invalid request";

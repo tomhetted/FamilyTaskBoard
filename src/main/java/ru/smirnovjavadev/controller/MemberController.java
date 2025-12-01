@@ -12,7 +12,6 @@ import ru.smirnovjavadev.dto.MemberDTO;
 import ru.smirnovjavadev.domain.Member;
 import ru.smirnovjavadev.service.MemberService;
 
-
 import javax.validation.Valid;
 import java.net.URI;
 import java.util.List;
@@ -30,7 +29,7 @@ public class MemberController {
         this.service = service;
     }
 
-    // GET /api/members -> 200
+    // GET /api/members
     @GetMapping
     public ResponseEntity<List<MemberDTO>> all() {
         List<MemberDTO> list = service.getAll().stream()
@@ -39,7 +38,7 @@ public class MemberController {
         return ResponseEntity.ok(list);
     }
 
-    // GET /api/members/household/{householdId} -> 200
+    // GET /api/members/household/{householdId}
     @GetMapping("/household/{householdId}")
     public ResponseEntity<List<MemberDTO>> allByHousehold(@PathVariable Long householdId) {
         List<MemberDTO> list = service.getAllByHousehold(householdId).stream()
@@ -48,21 +47,21 @@ public class MemberController {
         return ResponseEntity.ok(list);
     }
 
-    // GET /api/members/{id} -> 200 / 404
+    // GET /api/members/{id}
     @GetMapping("/{id}")
     public ResponseEntity<?> get(@PathVariable Long id) {
         try {
             Member m = service.getById(id);
             return ResponseEntity.ok(MemberDTO.fromEntity(m));
         } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error(404, ex.getMessage()));
+            return error(HttpStatus.NOT_FOUND, ex.getMessage());
         } catch (Exception ex) {
             log.error("Unexpected error while fetching member {}", id, ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error(500, "Internal server error"));
+            return error(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
         }
     }
 
-    // POST /api/members -> 201 Created (Location) or 400/409/500
+    // POST /api/members -> 201 Created
     @PostMapping
     public ResponseEntity<?> create(@RequestBody @Valid MemberDTO dto) {
         try {
@@ -73,33 +72,34 @@ public class MemberController {
             headers.setLocation(location);
             return ResponseEntity.created(location).headers(headers).body(body);
         } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error(400, ex.getMessage()));
+            return error(HttpStatus.BAD_REQUEST, ex.getMessage());
         } catch (DataIntegrityViolationException ex) {
-            // unique constraint violation at DB level
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(error(409, "Conflict creating member"));
+            log.warn("Conflict creating member: {}", ex.getMessage());
+            return error(HttpStatus.CONFLICT, "Conflict creating member");
         } catch (Exception ex) {
             log.error("Unexpected error while creating member", ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error(500, "Internal server error"));
+            return error(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
         }
     }
 
-    // DELETE /api/members/{id} -> 204 / 404 / 500
+    // DELETE /api/members/{id} -> 204
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         try {
             service.delete(id);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error(404, ex.getMessage()));
+            return error(HttpStatus.NOT_FOUND, ex.getMessage());
         } catch (Exception ex) {
             log.error("Unexpected error while deleting member {}", id, ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(error(500, "Internal server error"));
+            return error(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
         }
     }
 
-    private static ErrorPayload error(int status, String message) {
-        return new ErrorPayload(status, message == null ? "" : message);
+    // helper
+    private ResponseEntity<ErrorPayload> error(HttpStatus status, String message) {
+        ErrorPayload payload = new ErrorPayload(status.value(), message == null ? status.getReasonPhrase() : message);
+        return ResponseEntity.status(status).body(payload);
     }
 
     public static class ErrorPayload {
