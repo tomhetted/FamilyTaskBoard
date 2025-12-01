@@ -3,7 +3,6 @@ package ru.smirnovjavadev.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -29,7 +28,10 @@ public class MemberController {
         this.service = service;
     }
 
-    // GET /api/members
+    /**
+     * GET /api/members
+     * Success: 200 OK with list of MemberDTO
+     */
     @GetMapping
     public ResponseEntity<List<MemberDTO>> all() {
         List<MemberDTO> list = service.getAll().stream()
@@ -38,7 +40,10 @@ public class MemberController {
         return ResponseEntity.ok(list);
     }
 
-    // GET /api/members/household/{householdId}
+    /**
+     * GET /api/members/household/{householdId}
+     * Success: 200 OK with list of MemberDTO
+     */
     @GetMapping("/household/{householdId}")
     public ResponseEntity<List<MemberDTO>> allByHousehold(@PathVariable Long householdId) {
         List<MemberDTO> list = service.getAllByHousehold(householdId).stream()
@@ -47,7 +52,12 @@ public class MemberController {
         return ResponseEntity.ok(list);
     }
 
-    // GET /api/members/{id}
+    /**
+     * GET /api/members/{id}
+     * Success: 200 OK with MemberDTO
+     * Errors:
+     *   404 - not found
+     */
     @GetMapping("/{id}")
     public ResponseEntity<?> get(@PathVariable Long id) {
         try {
@@ -61,16 +71,20 @@ public class MemberController {
         }
     }
 
-    // POST /api/members -> 201 Created
+    /**
+     * POST /api/members
+     * Success: 201 Created, Location header to new member
+     * Errors:
+     *   400 - bad request
+     *   409 - conflict (duplicate)
+     */
     @PostMapping
     public ResponseEntity<?> create(@RequestBody @Valid MemberDTO dto) {
         try {
             Member m = service.create(dto.getHouseholdId(), dto.getName());
             MemberDTO body = MemberDTO.fromEntity(m);
             URI location = URI.create("/api/members/" + m.getId());
-            HttpHeaders headers = new HttpHeaders();
-            headers.setLocation(location);
-            return ResponseEntity.created(location).headers(headers).body(body);
+            return ResponseEntity.created(location).body(body);
         } catch (IllegalArgumentException ex) {
             return error(HttpStatus.BAD_REQUEST, ex.getMessage());
         } catch (DataIntegrityViolationException ex) {
@@ -82,7 +96,12 @@ public class MemberController {
         }
     }
 
-    // DELETE /api/members/{id} -> 204
+    /**
+     * DELETE /api/members/{id}
+     * Success: 204 No Content
+     * Errors:
+     *   404 - not found
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         try {

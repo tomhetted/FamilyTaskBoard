@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -31,7 +30,13 @@ public class TaskController {
         this.service = service;
     }
 
-    // GET /api/tasks/{id}
+    /**
+     * GET /api/tasks/{id}
+     * Success: 200 OK with TaskDTO
+     * Errors:
+     *   404 - task not found
+     *   500 - unexpected server error
+     */
     @GetMapping("/{id}")
     public ResponseEntity<?> get(@PathVariable Long id) {
         try {
@@ -45,7 +50,14 @@ public class TaskController {
         }
     }
 
-    // POST /api/tasks -> 201 Created
+    /**
+     * POST /api/tasks
+     * Success: 201 Created, Location header to new task, body contains TaskDTO
+     * Errors:
+     *   400 - bad request
+     *   404 - referenced board/member not found
+     *   409 - conflict (FK or duplicate)
+     */
     @PostMapping
     public ResponseEntity<?> create(@RequestBody @Valid TaskDTO taskDto) {
         try {
@@ -57,14 +69,11 @@ public class TaskController {
             );
             TaskDTO body = TaskDTO.fromEntity(task);
             URI location = URI.create("/api/tasks/" + task.getId());
-            HttpHeaders headers = new HttpHeaders();
-            headers.setLocation(location);
-            return ResponseEntity.created(location).headers(headers).body(body);
+            return ResponseEntity.created(location).body(body);
         } catch (DataIntegrityViolationException ex) {
             log.warn("Data integrity violation on create Task: {}", ex.getMessage());
             return error(HttpStatus.CONFLICT, "Resource conflict (possible duplicate or FK constraint)");
         } catch (IllegalArgumentException ex) {
-            // treat "not found" inside service as 404, others as 400
             String msg = ex.getMessage() == null ? "" : ex.getMessage();
             if (msg.toLowerCase().contains("not found")) {
                 return error(HttpStatus.NOT_FOUND, msg);
@@ -76,7 +85,14 @@ public class TaskController {
         }
     }
 
-    // PUT /api/tasks/{id} -> 200 OK (update)
+    /**
+     * PUT /api/tasks/{id}
+     * Success: 200 OK with updated TaskDTO
+     * Errors:
+     *   404 - not found
+     *   400 - bad request
+     *   409 - conflict
+     */
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody @Valid TaskDTO taskDto) {
         try {
@@ -103,7 +119,13 @@ public class TaskController {
         }
     }
 
-    // DELETE /api/tasks/{id} -> 204 No Content
+    /**
+     * DELETE /api/tasks/{id}
+     * Success: 204 No Content
+     * Errors:
+     *   404 - not found
+     *   500 - unexpected server error
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         try {
@@ -117,7 +139,12 @@ public class TaskController {
         }
     }
 
-    // GET /api/tasks/board/{boardId}/month?from=yyyy-MM-dd&to=yyyy-MM-dd
+    /**
+     * GET /api/tasks/board/{boardId}/month?from=yyyy-MM-dd&to=yyyy-MM-dd
+     * Success: 200 OK with list of TaskDTO
+     * Errors:
+     *   400 - bad request
+     */
     @GetMapping("/board/{boardId}/month")
     public ResponseEntity<?> forMonth(
             @PathVariable Long boardId,
@@ -139,7 +166,12 @@ public class TaskController {
         }
     }
 
-    // GET /api/tasks/board/{boardId}/week?start=yyyy-MM-dd
+    /**
+     * GET /api/tasks/board/{boardId}/week?start=yyyy-MM-dd
+     * Success: 200 OK with list of TaskDTO
+     * Errors:
+     *   400 - bad request (missing params)
+     */
     @GetMapping("/board/{boardId}/week")
     public ResponseEntity<?> forWeek(
             @PathVariable Long boardId,

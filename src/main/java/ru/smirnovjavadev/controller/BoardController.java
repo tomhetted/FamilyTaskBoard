@@ -3,7 +3,6 @@ package ru.smirnovjavadev.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -30,9 +29,11 @@ public class BoardController {
     }
 
     /**
-     * GET /api/boards/{id}  -> 200 (ok) with BoardDTO
-     * errors:
+     * GET /api/boards/{id}
+     * Success: 200 OK with BoardDTO
+     * Errors:
      *   404 - board not found
+     *   400 - bad request
      *   500 - unexpected server error
      */
     @GetMapping("/{id}")
@@ -42,11 +43,12 @@ public class BoardController {
             BoardDTO dto = service.toDto(board);
             return ResponseEntity.ok(dto);
         } catch (IllegalArgumentException ex) {
-            // treat "not found" as 404, other IllegalArgumentException as 400
-            if (ex.getMessage() != null && ex.getMessage().toLowerCase().contains("not found")) {
-                return error(HttpStatus.NOT_FOUND, ex.getMessage());
+            // heuristic: "not found" text -> 404, otherwise 400
+            String msg = ex.getMessage() == null ? "" : ex.getMessage();
+            if (msg.toLowerCase().contains("not found")) {
+                return error(HttpStatus.NOT_FOUND, msg);
             }
-            return error(HttpStatus.BAD_REQUEST, ex.getMessage());
+            return error(HttpStatus.BAD_REQUEST, msg);
         } catch (Exception ex) {
             log.error("Unexpected error while fetching board id={}", id, ex);
             return error(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
@@ -54,8 +56,9 @@ public class BoardController {
     }
 
     /**
-     * POST /api/boards  -> 201 Created (Location header) with created DTO
-     * errors:
+     * POST /api/boards
+     * Success: 201 Created, Location header points to new resource, body contains created DTO
+     * Errors:
      *   400 - validation or bad request
      *   404 - referenced household not found
      *   409 - conflict (unique constraint)
@@ -67,17 +70,17 @@ public class BoardController {
             Board created = service.create(dto);
             BoardDTO body = service.toDto(created);
             URI location = URI.create("/api/boards/" + created.getId());
-            HttpHeaders headers = new HttpHeaders();
-            headers.setLocation(location);
-            return ResponseEntity.created(location).headers(headers).body(body);
+            // created(...) already sets Location header
+            return ResponseEntity.created(location).body(body);
         } catch (DataIntegrityViolationException ex) {
             log.warn("Data integrity violation on create Board: {}", ex.getMessage());
             return error(HttpStatus.CONFLICT, "Resource conflict (possible duplicate)");
         } catch (IllegalArgumentException ex) {
-            if (ex.getMessage() != null && ex.getMessage().toLowerCase().contains("not found")) {
-                return error(HttpStatus.NOT_FOUND, ex.getMessage());
+            String msg = ex.getMessage() == null ? "" : ex.getMessage();
+            if (msg.toLowerCase().contains("not found")) {
+                return error(HttpStatus.NOT_FOUND, msg);
             }
-            return error(HttpStatus.BAD_REQUEST, ex.getMessage());
+            return error(HttpStatus.BAD_REQUEST, msg);
         } catch (Exception ex) {
             log.error("Unexpected error while creating board: {}", ex.getMessage(), ex);
             return error(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
@@ -86,18 +89,17 @@ public class BoardController {
 
     /**
      * DELETE /api/boards/{id}
-     * Deletes a board by id.
-     * Responses:
-     *   204 No Content - successfully deleted
-     *   404 Not Found - board not found
-     *   500 Internal Server Error - unexpected error
+     * Success: 204 No Content when deleted
+     * Errors:
+     *   404 - board not found
+     *   500 - unexpected server error
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         try {
             boolean deleted = service.deleteById(id);
             if (deleted) {
-                return ResponseEntity.noContent().build(); // 204 No Content
+                return ResponseEntity.noContent().build();
             } else {
                 return error(HttpStatus.NOT_FOUND, "Board not found with id=" + id);
             }
@@ -107,17 +109,12 @@ public class BoardController {
         }
     }
 
-
     /**
      * GET /api/boards/household/{householdId}/year/{year}/month/{month}
      * If board exists -> 200 OK with DTO
-     * If not -> creates and returns 201 Created with Location header
+     * If created -> 201 Created with Location header and DTO body
      * Errors:
      *   400/404/409/500 similar to create/get
-     *
-     * Note: service.getOrCreate may itself create a board; here we try to detect which happened:
-     * - If board existed -> return 200
-     * - If created -> return 201 with Location
      */
     @GetMapping("/household/{householdId}/year/{year}/month/{month}")
     public ResponseEntity<?> getOrCreate(@PathVariable Long householdId,
@@ -129,18 +126,19 @@ public class BoardController {
             BoardDTO dto = service.toDto(board);
             if (result.isCreated()) {
                 URI location = URI.create("/api/boards/" + board.getId());
-                return ResponseEntity.created(location).body(dto); // 201
+                return ResponseEntity.created(location).body(dto);
             } else {
-                return ResponseEntity.ok(dto); // 200
+                return ResponseEntity.ok(dto);
             }
         } catch (DataIntegrityViolationException ex) {
             log.warn("Data integrity violation on getOrCreate board: {}", ex.getMessage());
             return error(HttpStatus.CONFLICT, "Resource conflict (possible duplicate)");
         } catch (IllegalArgumentException ex) {
-            if (ex.getMessage() != null && ex.getMessage().toLowerCase().contains("not found")) {
-                return error(HttpStatus.NOT_FOUND, ex.getMessage());
+            String msg = ex.getMessage() == null ? "" : ex.getMessage();
+            if (msg.toLowerCase().contains("not found")) {
+                return error(HttpStatus.NOT_FOUND, msg);
             }
-            return error(HttpStatus.BAD_REQUEST, ex.getMessage());
+            return error(HttpStatus.BAD_REQUEST, msg);
         } catch (Exception ex) {
             log.error("Unexpected error while getOrCreate board: {}", ex.getMessage(), ex);
             return error(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
@@ -150,6 +148,9 @@ public class BoardController {
     /**
      * GET /api/boards/household/{householdId}
      * Returns list of boards for household -> 200 OK
+     * Errors:
+     *   400 - bad request
+     *   500 - unexpected server error
      */
     @GetMapping("/household/{householdId}")
     public ResponseEntity<?> listByHousehold(@PathVariable Long householdId) {
