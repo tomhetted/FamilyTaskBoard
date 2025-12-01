@@ -1,4 +1,4 @@
-/* ======= Полный CSS для доски (увеличенная сетка, уменьшённый столбец недели) ======= */
+/* ======= Полный CSS для доски (увеличенные ячейки, плотные карточки задач) ======= */
 
 * { box-sizing: border-box; }
 
@@ -33,17 +33,14 @@ h1, h2, h3 {
     transition: background 0.18s ease, transform 0.06s ease;
 }
 .controls button:hover { background: #88c99e; transform: translateY(-1px); }
-.controls #openCreateBoard {
-    background: #bfa0e0;
-}
+.controls #openCreateBoard { background: #bfa0e0; }
 .controls #openCreateBoard:hover { background: #a386d1; }
 
 /* ======= Контейнер месяца + недели ======= */
-/* максимально допустимая ширина календаря — дает место для увеличенных ячеек */
 .container {
     display: flex;
     gap: 18px;
-    max-width: 1300px;   /* увеличено для более крупной сетки */
+    max-width: 1400px;
     margin: 0 auto;
     align-items: flex-start;
     padding: 0 10px;
@@ -56,12 +53,11 @@ h1, h2, h3 {
 }
 
 /* ======= Weekday header ====== */
-/* Используем те же размеры колонок, что и в .month-grid, чтобы колонки ровно стыковались */
 .weekday-row {
   display: grid;
-  grid-template-columns: repeat(7, minmax(120px, 1fr)); /* соответствует month-grid */
-  gap: 12px;
-  margin: 0 0 10px 0;
+  grid-template-columns: repeat(7, minmax(160px, 1fr));
+  gap: 14px;
+  margin: 0 0 12px 0;
   padding: 0;
   width: 100%;
   min-width: 0;
@@ -69,50 +65,47 @@ h1, h2, h3 {
 
 .weekday {
   text-align: center;
-  font-weight: 700;
+  font-weight: 800;
   color: #2d572c;
-  padding: 10px 6px;
+  padding: 12px 8px;
   background: rgba(234,246,234,0.0);
-  font-size: 14px;
+  font-size: 15px;
   border-radius: 6px;
   user-select: none;
 }
 
 /* ======= Сетка месяца ======= */
-/* Делая минимальную ширину ячейки более высокой, получаем более крупный календарь */
 .month-grid {
     display: grid;
-    grid-template-columns: repeat(7, minmax(120px, 1fr)); /* увеличено с 80px -> 120px */
-    gap: 12px;
+    grid-template-columns: repeat(7, minmax(160px, 1fr));
+    gap: 14px;
     flex: 1 1 auto;
     min-width: 0;
-    /* фиксируем явный максимум ширины содержимого, чтобы правый столбец не "затирал" лево */
 }
 
 /* ======= Ячейка дня месяца ======= */
-/* Установим честную высоту (не слишком большая), но достаточно большая для описания задач */
 .day-cell {
     background: #eaf6ea;
     border: 1px solid #c2e2c2;
     display: flex;
     flex-direction: column;
-    border-radius: 8px;
-    padding: 10px;
-    font-size: 14px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 15px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
     transition: transform 0.08s, background 0.18s;
     overflow: hidden;
-    min-height: 160px;   /* увеличено для более просторных ячеек */
-    max-height: 220px;   /* ограничиваем вертикальное вытягивание */
+    min-height: 280px;   /* Увеличено: теперь минимум 280px */
+    max-height: 480px;
 }
 
 /* hover */
 .day-cell:hover {
-    transform: translateY(-3px);
+    transform: translateY(-4px);
     background: #d9efd9;
 }
 
-/* пустая/заполнительная ячейка (для сдвига месяца) */
+/* пустая/заполнительная ячейка */
 .day-cell.empty {
   background: transparent;
   border: none;
@@ -124,40 +117,39 @@ h1, h2, h3 {
 
 /* Заголовок дня (номер + краткий день недели) */
 .day-header {
-    font-weight: 700;
-    margin-bottom: 8px;
+    font-weight: 800;
+    margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 13px;
+    font-size: 14px;
     color: #2d572c;
 }
 
 /* ======= Контейнер задач ======= */
-/* flex:1 + min-height:0 гарантируют, что прокрутка внутри будет работать корректно */
 .tasks {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
     padding-right: 6px;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
 }
 
 /* ======= Форма добавления ======= */
 .add-form {
     display: flex;
-    gap: 8px;
-    margin-top: 6px;
+    gap: 10px;
+    margin-top: 8px;
     align-items: center;
 }
 
 .add-form input {
     flex: 1;
     min-width: 0;
-    padding: 8px 10px;
+    padding: 10px 12px;
     border: 1px solid #cfded0;
-    border-radius: 6px;
-    font-size: 14px;
+    border-radius: 8px;
+    font-size: 15px;
     background: #fff;
 }
 
@@ -165,33 +157,32 @@ h1, h2, h3 {
     background: #bfa0e0;
     border: none;
     color: #fff;
-    padding: 6px 10px;
-    border-radius: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
     cursor: pointer;
 }
 .add-form button:hover { background: #a386d1; }
 
 /* ======= Столбец недели (правый столбец) ======= */
-/* Уменьшили ширину чтобы не съедать пространство у календаря */
 .week-column {
     display: flex;
     flex-direction: column;
-    flex: 0 0 200px; /* уменьшено (были 260px) */
-    max-width: 200px;
-    min-width: 160px;
+    flex: 0 0 170px; /* чуть уменьшен относительно предыдущего варианта */
+    max-width: 170px;
+    min-width: 150px;
 }
 
-/* Ячейка дня недели — делаем чуть компактнее, но достаточно для задач */
+/* Ячейка дня недели */
 .week-day {
     background: #f3eaf6;
     border: 1px solid #d2c2e0;
     border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
     display: flex;
     flex-direction: column;
-    min-height: 120px; /* чуть меньше чем .day-cell, чтобы не конкурировать по высоте */
-    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    min-height: 140px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     overflow: hidden;
 }
 
@@ -203,23 +194,24 @@ h1, h2, h3 {
 }
 
 /* область задач внутри недели — прокручиваемая */
-.week-day .tasks { overflow-y: auto; margin-top: 4px; }
+.week-day .tasks { overflow-y: auto; margin-top: 6px; }
 
-/* ======= Задачи ======= */
+/* ======= Задачи (плотные карточки) ======= */
 .task {
     background: #d1f0d1;
     border-left: 4px solid #4caf50;
-    padding: 6px 8px;
-    margin: 6px 0;
-    border-radius: 6px;
-    font-size: 14px;
+    padding: 6px 8px;     /* уменьшено padding для плотности */
+    margin: 6px 0;        /* уменьшено расстояние между карточками */
+    border-radius: 7px;
+    font-size: 14px;      /* чуть меньше шрифт чтобы влезало больше текста */
     text-align: left;
     line-height: 1.2;
     word-break: break-word;
+    max-height: 96px;     /* предотвращаем чрезмерное расширение карточек */
+    overflow: hidden;
 }
 
-/* hover */
-.task:hover { background: #bfe6b8; }
+.task:hover { background: #cfeec2; }
 
 /* ======= Модальное окно — создание новой доски ======= */
 .modal {
@@ -237,7 +229,7 @@ h1, h2, h3 {
     background: #ffffff;
     padding: 18px;
     border-radius: 10px;
-    width: 520px;       /* немного шире для удобства */
+    width: 560px;
     max-width: 96%;
     box-shadow: 0 10px 30px rgba(0,0,0,0.12);
     border: 1px solid rgba(140, 200, 150, 0.12);
@@ -310,23 +302,24 @@ h1, h2, h3 {
 #cb-cancel-btn { background: #f0f0f0; color: #333; border: 1px solid #e6e6e6; }
 #cb-cancel-btn:hover { background: #e9e9e9; }
 
-/* Ошибки/подсказки */
 #cb-error { color: #b00020; font-size: 13px; margin-top: 8px; }
 
 /* Responsive adjustments */
-@media (max-width: 1100px) {
-  .month-grid { grid-template-columns: repeat(7, minmax(90px, 1fr)); gap: 10px; }
-  .weekday-row { grid-template-columns: repeat(7, minmax(90px, 1fr)); gap: 10px; }
-  .day-cell { min-height: 140px; max-height: 200px; padding: 8px; }
-  .week-column { flex: 0 0 180px; max-width: 180px; min-width: 150px; }
-  .week-day { min-height: 110px; padding: 8px; }
+@media (max-width: 1200px) {
+  .month-grid { grid-template-columns: repeat(7, minmax(120px, 1fr)); gap: 12px; }
+  .weekday-row { grid-template-columns: repeat(7, minmax(120px, 1fr)); gap: 12px; }
+  .day-cell { min-height: 240px; max-height: 420px; padding: 10px; }
+  .week-column { flex: 0 0 150px; max-width: 150px; min-width: 130px; }
+  .week-day { min-height: 120px; padding: 10px; }
+  .task { font-size: 13px; padding: 5px 7px; max-height: 88px; }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 800px) {
   .container { flex-direction: column; }
   .week-column { width: 100%; max-width: none; min-width: 0; order: 2; }
   .container > div:first-child { order: 1; }
   .month-grid { grid-template-columns: repeat(7, minmax(56px, 1fr)); gap: 6px; }
   .weekday-row { grid-template-columns: repeat(7, minmax(56px, 1fr)); gap: 6px; margin-bottom: 6px; }
   .day-cell { min-height: 110px; max-height: none; padding: 8px; }
+  .task { font-size: 12px; padding: 4px 6px; }
 }
