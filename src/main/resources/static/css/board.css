@@ -1,139 +1,145 @@
-/* ======= Общие стили (обновлённые) ======= */
+/* ======= Цветовые переменные ======= */
+:root {
+    --accent-purple: #b085d6;
+    --accent-purple-dark: #8b63b8;
+
+    --accent-green: #6dbf6d;
+    --accent-green-dark: #4f9d4f;
+}
+
+/* ======= Общие стили (темнее) ======= */
 * { box-sizing: border-box; }
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    background: linear-gradient(135deg, #92e0aa, #b085d6);
+}
 
 body {
     font-family: "Segoe UI", Arial, sans-serif;
-    background: #f3f6f4; /* светлый салатовый фон */
-    margin: 0;
+    background: transparent; /* не дублируем */
     padding: 20px;
 }
+
 
 h1, h2, h3 {
     text-align: center;
     margin: 10px 0 20px;
     font-weight: 600;
-    color: #333;
+    color: #222;
 }
 
-/* Кнопки навигации */
+/* ======= Кнопки навигации (prev/next/new board) – фиолетовые ======= */
 .controls button {
-    background: #a0d6b4; /* мягкий салатовый */
-    color: #fff;
+    background: linear-gradient(180deg,var(--accent-purple), var(--accent-purple-dark));
+    color: #ffffff;
     border: none;
     padding: 8px 16px;
     font-size: 14px;
     border-radius: 6px;
     cursor: pointer;
-    transition: background 0.18s ease, transform 0.06s ease;
+    transition: background 0.18s ease, transform 0.06s ease, box-shadow .06s;
+    box-shadow: 0 6px 14px rgba(100,60,150,0.15);
 }
-
 .controls button:hover {
-    background: #88c99e; /* немного темнее */
+    background: #8f5fbd;
     transform: translateY(-1px);
 }
 
-/* ======= Контейнер месяца + недели ======= */
+/* ======= Контейнер ======= */
 .container {
-    display: flex;           /* горизонтальный layout */
-    gap: 12px;               /* расстояние между колонками */
-    max-width: 1200px;
+    display: flex;
+    gap: 12px;
+    max-width: 1600px;
     margin: 0 auto;
     align-items: flex-start;
     padding: 0 10px;
     overflow-x: auto;
 }
 
-/* Левый блок хранит weekday-row + month-grid */
 .container > div:first-child {
     flex: 1 1 auto;
-    min-width: 0; /* важно, чтобы содержимое могло корректно сжиматься */
+    min-width: 0;
 }
 
 /* ======= Weekday header ====== */
 .weekday-row {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 6px; /* уменьшен gap между заголовками дней */
-  margin: 0 0 6px 0;
-  padding: 0;
-  width: 100%;
-  min-width: 0;
+  gap: 6px;
+  margin-bottom: 6px;
 }
 
 .weekday {
   text-align: center;
   font-weight: 700;
-  color: #2d572c;
-  padding: 6px 4px; /* уменьшены отступы */
-  background: transparent;
-  font-size: 12px; /* чуть меньше, чтобы выравнять с сеткой */
+  color: #234223;
+  padding: 6px 4px;
+  font-size: 12px;
 }
 
-/* ======= Сетка месяца ======= */
-/* minmax(0,1fr) — безопасно внутри flex-контейнера */
+/* ======= Month grid ======= */
 .month-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 6px; /* уменьшен gap между ячейками */
+    gap: 6px;
     flex: 1 1 auto;
     min-width: 0;
 }
 
-/* ======= Ячейка дня месяца ======= */
+/* ======= Day cell ======= */
 .day-cell {
-    background: #eaf6ea; /* светлый салатовый */
-    border: 1px solid #c2e2c2;
-    min-height: 200px; /* как просил — увеличили */
+    background: #d8e7d8;
+    border: 1px solid #aacaaa;
+    min-height: 200px;
     display: flex;
     flex-direction: column;
     border-radius: 8px;
-    padding: 4px; /* уменьшён padding внутри ячейки */
+    padding: 4px;
     font-size: 14px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    transition: transform 0.12s, background 0.18s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    transition: transform .12s, background .18s;
     overflow: hidden;
 }
 
-.day-cell:hover {
-    transform: scale(1.01); /* небольшая анимация */
-    background: #d1e9d1;
-}
+.day-cell:hover { background: #c4d8c4; }
 
-/* Пустая/заполнительная ячейка (неактивная) */
 .day-cell.empty {
   background: transparent;
   border: none;
   box-shadow: none;
-  min-height: 40px;
-  pointer-events: none;
   opacity: 0;
 }
 
 /* Заголовок дня */
 .day-header {
     font-weight: 600;
-    margin-bottom: 4px; /* уменьшен отступ под датой */
+    margin-bottom: 2px;
     display: flex;
     justify-content: space-between;
-    font-size: 12px; /* уменьшен размер шрифта даты */
-    color: #2d572c;
+    font-size: 12px;
+    color: #234223;
 }
 
-/* маленькая подпись (день недели в заголовке) */
 .day-header .small {
     font-size: 11px;
-    color: rgba(45,87,44,0.85);
+    color: rgba(35,66,35,0.8);
 }
 
-/* ======= Контейнер задач ======= */
+/* ======= Tasks container ======= */
 .tasks {
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
-    padding-right: 4px; /* немного уменьшено */
+    padding-right: 2px;
 }
 
-/* ======= Форма добавления (компактная) ======= */
+/* ======= Add form (скоро уйдет в модалку) ======= */
 .add-form {
     display: flex;
     gap: 6px;
@@ -141,113 +147,79 @@ h1, h2, h3 {
     align-items: center;
 }
 
-/* компактный input (если используется) */
 .add-form input {
     flex: 1;
     min-width: 0;
-    padding: 4px 6px;     /* уменьшен padding */
-    border: 1px solid #c2e2c2;
+    padding: 4px 6px;
+    border: 1px solid #aacaaa;
     border-radius: 6px;
     font-size: 13px;
-    height: 28px;         /* уменьшенная высота */
+    height: 28px;
+    background: #f7faf7;
 }
 
-/* компактная кнопка (если остаётся) */
 .add-form button {
-    background: #bfa0e0; /* мягкий сиреневый */
+    background: linear-gradient(180deg,var(--accent-purple), var(--accent-purple-dark));
     border: none;
     color: #fff;
     padding: 6px 10px;
     border-radius: 6px;
     cursor: pointer;
     height: 28px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     font-size: 13px;
+    box-shadow: 0 6px 12px rgba(133,79,176,0.12);
 }
+.add-form button:hover { background: #8f5fbd; }
 
-.add-form button:hover {
-    background: #a386d1;
-    transform: translateY(-1px);
-}
-
-/* ======= Кнопка "Добавить задачу" в ячейках ======= */
-/* контейнер для кнопки внизу ячейки — по умолчанию справа */
+/* ======= Add-task button ======= */
 .add-action {
-    margin-top: 6px;
+    margin-top: 4px;
     display: flex;
-    justify-content: flex-end; /* по умолчанию справа */
+    justify-content: flex-end;
     width: 100%;
-    box-sizing: border-box;
 }
 
-/* подправим для колонок недели — центрируем там кнопку */
-.week-day .add-action {
-    justify-content: center;
-}
+.week-day .add-action { justify-content: center; }
 
-/* фиолетовая «Добавить задачу» */
 .btn-add-task {
-    background: #bfa0e0; /* мягкий фиолетовый */
-    color: #ffffff;
+    background: #bfa0e0;
+    color: #fff;
     border: none;
-    padding: 6px 10px;    /* уменьшены внутренние отступы */
-    border-radius: 10px;  /* скругление */
+    padding: 4px 10px;
+    border-radius: 10px;
     cursor: pointer;
     font-size: 13px;
-    transition: background 0.16s ease, transform 0.06s ease;
-    box-shadow: 0 2px 6px rgba(163,129,209,0.12);
-    align-self: flex-end;
-    white-space: nowrap;
-    max-width: 100%;      /* не выйдет за пределы ячейки */
-    box-sizing: border-box;
+    transition: background .16s, transform .06s;
+    box-shadow: 0 2px 6px rgba(163,129,209,0.18);
 }
 
-/* компактный вариант на очень узких ячейках */
-.btn-add-task.small {
-    padding: 5px 8px;
-    font-size: 12px;
-}
+.btn-add-task:hover { background: #a386d1; }
 
-.btn-add-task:hover {
-    background: #a386d1;
-    transform: translateY(-1px);
-}
-
-/* ======= Столбец недели (фиксированная ширина, уменьшена) ======= */
+/* ======= Week Column ======= */
 .week-column {
     display: flex;
     flex-direction: column;
-    flex: 0 0 200px; /* чуть уже, чтобы календарь был крупнее */
-    max-width: 200px;
-    min-width: 160px;
+    flex: 0 0 180px;
+    max-width: 180px;
+    min-width: 150px;
 }
 
-/* Ячейка дня недели */
+/* Week-day cell */
 .week-day {
-    background: #f3eaf6;
-    border: 1px solid #d2c2e0;
+    background: #e4d7ed;
+    border: 1px solid #bba8c8;
     border-radius: 8px;
-    padding: 6px; /* уменьшен padding */
+    padding: 6px;
     margin-bottom: 10px;
     display: flex;
     flex-direction: column;
     min-height: 120px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
 }
 
-.week-day .day-header {
-    color: #5a3b73;
-    font-size: 12px;
-    margin-bottom: 4px;
-}
+.week-day .day-header { color: #4b2e65; }
 
-/* внутри дни недели — прокручиваемая область задач */
-.week-day .tasks { overflow-y: auto; margin-top: 6px; }
-
-/* ======= Задачи ======= */
+/* ======= Task card (цветовые статусы) ======= */
 .task {
     display: flex;
     align-items: center;
@@ -256,24 +228,44 @@ h1, h2, h3 {
     margin: 6px 0;
     border-radius: 6px;
     font-size: 13px;
-    text-align: left;
-    /* по умолчанию нейтральная тонкая граница слева */
     border-left: 6px solid transparent;
-    transition: background .12s ease, transform .08s ease;
+    transition: background .12s, transform .08s;
     overflow: hidden;
 }
 
-/* на hover слегка подсвечиваем карточку */
-.task:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+.task--todo {
+    border-left-color: #d64532;
+    background: rgba(214,69,50,0.08);
+}
+.task--in-progress {
+    border-left-color: #2c89c9;
+    background: rgba(44,137,201,0.08);
+}
+.task--done {
+    border-left-color: #229a55;
+    background: rgba(34,154,85,0.08);
 }
 
-/* ======= Модальное окно — общие стили (без изменений по стилю, немного выровнены) ======= */
+.task:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.09);
+}
+
+.task-desc {
+    flex: 1 1 auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ========================================================= */
+/* ======================= MODALS ========================== */
+/* ========================================================= */
+
 .modal {
     position: fixed;
-    left: 0; top: 0; right: 0; bottom: 0;
-    background: rgba(17, 33, 17, 0.28);
+    inset: 0;
+    background: rgba(5, 15, 5, 0.45);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -282,180 +274,78 @@ h1, h2, h3 {
 }
 
 .modal-content {
-    background: #ffffff;
-    padding: 18px;
-    border-radius: 10px;
+    background: #f0f3f0;
+    padding: 22px;
+    border-radius: 12px;
     width: 480px;
     max-width: 96%;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-    border: 1px solid rgba(140, 200, 150, 0.12);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+    border: 1px solid rgba(80,120,90,0.25);
 }
 
-/* Заголовок внутри модала */
 .modal-content h3 {
-    margin: 0 0 10px;
-    font-size: 18px;
-    color: #2d572c;
-    text-align: left;
+    margin-top: 0;
+    color: #234223;
 }
 
-/* Строка формы */
-.form-row {
-    margin: 8px 0;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.form-row label {
-    min-width: 88px;
-    color: #3a5c3a;
-    font-size: 13px;
-    font-weight: 600;
-}
-
-/* Входы и селекты */
-.form-row input[type="text"],
-.form-row input[type="number"],
-.form-row select,
+/* Поля */
+.modal-content input,
 .modal-content textarea,
-.modal-content input[type="date"] {
-    flex: 1;
+.modal-content select {
+    width: 100%;
     padding: 8px 10px;
-    border: 1px solid #c2e2c2;
     border-radius: 6px;
+    border: 1px solid #a8c0a8;
+    background: white;
     font-size: 14px;
-    background: #fff;
-    transition: border-color .15s ease, box-shadow .15s ease;
+    margin-bottom: 12px;
 }
 
-/* textarea в модалках */
-.modal-content textarea {
-    min-height: 64px;
-    resize: vertical;
-    line-height: 1.25;
-}
-
-.form-row input[type="text"]:focus,
-.form-row input[type="number"]:focus,
-.form-row select:focus,
-.modal-content textarea:focus,
-.modal-content input[type="date"]:focus {
-    outline: none;
-    border-color: #88c99e;
-    box-shadow: 0 0 0 3px rgba(136,201,158,0.12);
-}
-
-/* Новая строка для ввода названия нового домохозяйства */
-#cb-new-household-row { display: flex; margin-top: 6px; }
-#cb-new-household-row input { flex: 1; }
-
-/* ======= Кнопки модалок — общий стиль ======= */
-.form-actions {
-    margin-top: 12px;
+/* ======= ФИОЛЕТОВЫЕ кнопки модалки ======= */
+.modal-actions {
     display: flex;
-    gap: 8px;
     justify-content: flex-end;
-    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
 }
 
-/* primary (сохранить) */
-.btn-primary,
-#cb-create-btn {
-    background: #a0d6b4;
-    color: #fff;
+.btn-primary {
+    background: var(--accent-purple);
     border: none;
-    padding: 8px 12px;
-    border-radius: 8px;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: background 0.16s ease, transform .06s ease;
+    font-size: 14px;
+    box-shadow: 0 4px 10px rgba(150,90,200,0.16);
 }
-.btn-primary:hover,
-#cb-create-btn:hover { background: #88c99e; transform: translateY(-1px); }
+.btn-primary:hover {
+    background: var(--accent-purple-dark);
+}
 
-/* secondary / cancel */
-.btn-secondary,
-#cb-cancel-btn {
-    background: #f0f0f0;
+.btn-secondary {
+    background: #c8cfc8;
+    border: none;
     color: #333;
-    border: 1px solid #e6e6e6;
-    padding: 8px 12px;
-    border-radius: 8px;
+    padding: 8px 16px;
+    border-radius: 6px;
     cursor: pointer;
 }
-.btn-secondary:hover,
-#cb-cancel-btn:hover { background: #e9e9e9; }
+.btn-secondary:hover {
+    background: #b9c3b9;
+}
 
-/* danger (удалить) */
-.btn-danger,
-#tm-delete-btn {
-    background: #ef6b6b;
+.btn-danger {
+    background: #d64532;
     color: #fff;
     border: none;
-    padding: 8px 12px;
-    border-radius: 8px;
+    padding: 8px 16px;
+    border-radius: 6px;
     cursor: pointer;
 }
-.btn-danger:hover,
-#tm-delete-btn:hover { background: #e05252; transform: translateY(-1px); }
+.btn-danger:hover {
+    background: #b83425;
+}
 
-#cb-error { color: #b00020; font-size: 13px; margin-top: 8px; }
-
-/* Мелкие вспомогательные классы */
+/* Misc */
 .hidden { display: none !important; }
-
-/* Небольшая адаптация: кнопка "New board" в .controls */
-.controls #openCreateBoard { background: #bfa0e0; color: #fff; border-radius: 6px; padding: 8px 12px; }
-.controls #openCreateBoard:hover { background: #a386d1; transform: translateY(-1px); }
-
-/* Responsive tweaks */
-@media (max-width: 900px) {
-  .month-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
-  .container { gap: 10px; padding: 0 8px; }
-  .week-column { flex: 0 0 160px; max-width: 160px; min-width: 140px; }
-  .weekday-row { gap: 6px; }
-  .btn-add-task { max-width: 140px; font-size: 12px; }
-}
-
-@media (max-width: 520px) {
-    .modal-content { width: 96%; padding: 14px; border-radius: 8px; }
-    .form-row { flex-direction: column; align-items: stretch; }
-    .form-row label { min-width: auto; margin-bottom: 4px; }
-    .container { flex-direction: column; }
-    .week-column { width: 100%; max-width: none; min-width: 0; order: 2; }
-    .container > div:first-child { order: 1; }
-}
-
-/* ====== Task status badge ====== */
-.task { display: flex; gap: 8px; align-items: center; }
-.task-status {
-  display: inline-block;
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: #f0ecfb;
-  color: #5a3b73;
-  font-weight: 600;
-  white-space: nowrap;
-}
-/* Цвета статусов (левый бордер + лёгкий фон) */
-.task--todo {
-    border-left-color: #e74c3c; /* красный */
-    background: rgba(231,76,60,0.04);
-}
-.task--in-progress {
-    border-left-color: #3498db; /* синий */
-    background: rgba(52,152,219,0.04);
-}
-.task--done {
-    border-left-color: #27ae60; /* зелёный */
-    background: rgba(39,174,96,0.04);
-}
-/* текст описания занимает всё доступное место и не ломает layout */
-.task-desc {
-    display: inline-block;
-    flex: 1 1 auto;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
