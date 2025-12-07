@@ -11,15 +11,27 @@ const weekContainer = document.getElementById("weekContainer");
 const currentMonthLabel = document.getElementById("currentMonthLabel");
 const weekdayRow = document.getElementById("weekdayRow");
 
-let currentYear = Number.isFinite(initialYear) ? initialYear : (new Date()).getFullYear();
-let currentMonth = Number.isFinite(initialMonth) ? initialMonth : ((new Date()).getMonth() + 1);
+// При открытии страницы доски показываем ТЕКУЩИЙ месяц по умолчанию.
+const nowInit = new Date();
+let currentYear = nowInit.getFullYear();
+let currentMonth = nowInit.getMonth() + 1; // 1..12
 
 // cache for household and members
 let boardHouseholdId = null;
 let membersCache = null; // array of {id, name}
 
-// possible statuses
+// backend status keys
 const STATUSES = ['TODO', 'IN_PROGRESS', 'DONE'];
+
+// mapping backend -> user friendly labels
+const STATUS_LABELS = {
+  'TODO': 'Сделать',
+  'IN_PROGRESS': 'В прогрессе',
+  'DONE': 'Готово'
+};
+
+// русские имена месяцев (для заголовка)
+const MONTH_NAMES = ['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
 
 // ---------- helpers ----------
 function pad(n){ return n < 10 ? '0' + n : '' + n; }
@@ -32,12 +44,29 @@ function formatIsoFromYMD(y,m,d){
 function getDaysInMonth(y,m){ return new Date(y, m, 0).getDate(); }
 function firstDayIso(y,m){ return formatIsoFromYMD(y, m, 1); }
 function lastDayIso(y,m){ return formatIsoFromYMD(y, m, getDaysInMonth(y,m)); }
+
+// mondayOf: возвращает дату понедельника той же недели
 function mondayOf(date){
   const d = new Date(date);
-  const weekday = (d.getDay() + 6) % 7; // 0=Mon
+  const weekday = (d.getDay() + 6) % 7; // 0=Mon, 6=Sun
   d.setDate(d.getDate() - weekday);
   d.setHours(0,0,0,0);
   return d;
+}
+
+// класс для статуса (normalized): 'task--todo' / 'task--in-progress' / 'task--done'
+function statusClass(status) {
+  if (!status) return '';
+  return 'task--' + String(status).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+}
+
+// обновить заголовок страницы: "<title> на <месяц>"
+function updatePageTitle(year, month){
+  const pageTitleEl = document.getElementById('pageTitle');
+  const titleFromData = boardData ? (boardData.dataset.title || '') : '';
+  const titleText = titleFromData && titleFromData.trim() ? titleFromData.trim() : 'TaskBoard';
+  const monthName = MONTH_NAMES[(month - 1 + 12) % 12];
+  if (pageTitleEl) pageTitleEl.textContent = `${titleText} на ${monthName}`;
 }
 
 // ---------- network ----------
@@ -60,7 +89,6 @@ async function fetchBoardDetails(){
   if (boardHouseholdId !== null) return { householdId: boardHouseholdId };
   try {
     const dto = await safeFetchJson(`/api/boards/${BOARD_ID}`);
-    // dto may be BoardDTO with householdId
     boardHouseholdId = dto && dto.householdId ? dto.householdId : null;
     return { householdId: boardHouseholdId, dto };
   } catch(e){
@@ -71,7 +99,6 @@ async function fetchBoardDetails(){
 }
 
 async function fetchMembersForBoard(){
-  // try to return cached members
   if (Array.isArray(membersCache)) return membersCache;
   const b = await fetchBoardDetails();
   if (!b || !b.householdId) {
@@ -189,10 +216,13 @@ function ensureTaskModalExists(){
   wrapper.innerHTML = html;
   document.body.appendChild(wrapper);
 
-  // populate status select
+  // populate status select (show friendly labels, keep backend code as value)
   const statusSel = document.getElementById('tm-status-select');
+  statusSel.innerHTML = '';
   STATUSES.forEach(s => {
-    const o = document.createElement('option'); o.value = s; o.textContent = s.replace('_',' ');
+    const o = document.createElement('option');
+    o.value = s;
+    o.textContent = STATUS_LABELS[s] || s;
     statusSel.appendChild(o);
   });
 
@@ -251,7 +281,7 @@ async function populateMemberSelect(){
   });
 }
 
-async function openTaskModal({ mode = 'create', dateIso = null, task = null } = {}){
+async function openTaskModal({ mode = 'create', dateIso = null, task = null } = {}) {
   ensureTaskModalExists();
   hideTaskError();
 
@@ -270,26 +300,22 @@ async function openTaskModal({ mode = 'create', dateIso = null, task = null } = 
   await populateMemberSelect();
 
   if (mode === 'create') {
-    // reset fields
     deleteBtn.style.display = 'none';
     deleteBtn.dataset.taskId = '';
     saveBtn.dataset.mode = 'create';
     saveBtn.dataset.taskId = '';
 
     if (dateIso) {
-      // yyyy-mm-dd -> set to input
       dateEl.value = dateIso;
     } else {
       const today = new Date();
       dateEl.value = formatIso(today);
     }
     descEl.value = '';
-    // select none by default
     memberSel.value = '';
     statusSel.value = 'TODO';
     document.getElementById('tm-title').textContent = 'Новая задача';
   } else {
-    // edit
     if (!task) {
       showTaskError('Нет данных задачи для редактирования');
       return;
@@ -307,7 +333,6 @@ async function openTaskModal({ mode = 'create', dateIso = null, task = null } = 
   }
 
   modal.style.display = 'flex';
-  // focus desc
   setTimeout(()=> descEl.focus(), 80);
 }
 
@@ -379,7 +404,9 @@ async function renderMonth(year, month){
   const tasksByDate = {};
   if (Array.isArray(tasks)) tasks.forEach(t => { if (t && t.date) (tasksByDate[t.date] = tasksByDate[t.date] || []).push(t); });
 
-  if (currentMonthLabel) currentMonthLabel.textContent = `${year}-${String(month).padStart(2,'0')}`;
+  // label and page title: month name + year
+  if (currentMonthLabel) currentMonthLabel.textContent = `${MONTH_NAMES[(month-1+12)%12]} ${year}`;
+  updatePageTitle(year, month);
 
   for(let d=1; d<=days; d++){
     const iso = formatIsoFromYMD(year, month, d);
@@ -393,12 +420,24 @@ async function renderMonth(year, month){
     const tasksDiv = document.createElement('div'); tasksDiv.className='tasks';
     (tasksByDate[iso] || []).forEach(t => {
       const tdiv = document.createElement('div');
-      tdiv.className='task';
-      tdiv.textContent = (t.memberName ? '['+t.memberName+'] ' : '') + t.description;
+      tdiv.className = 'task';
       if (t.id) tdiv.dataset.taskId = t.id;
       if (t.memberId) tdiv.dataset.memberId = t.memberId;
       if (t.status) tdiv.dataset.status = t.status;
       if (t.date) tdiv.dataset.date = t.date;
+
+      // apply status class for color indicator
+      const sc = statusClass(t.status);
+      if (sc) tdiv.classList.add(sc);
+
+      // description (with optional member)
+      const descSpan = document.createElement('span');
+      descSpan.className = 'task-desc';
+      const memberPart = t.memberName ? '['+t.memberName+'] ' : '';
+      descSpan.textContent = memberPart + (t.description || '');
+
+      tdiv.appendChild(descSpan);
+
       // left click -> edit modal
       tdiv.addEventListener('click', (ev) => {
         ev.preventDefault();
@@ -425,7 +464,7 @@ async function renderMonth(year, month){
     });
     cell.appendChild(tasksDiv);
 
-    // add button (opens modal) — replaced input+submit with single button
+    // add button (opens modal)
     const actions = document.createElement('div');
     actions.className = 'add-action';
     const addBtn = document.createElement('button');
@@ -437,7 +476,6 @@ async function renderMonth(year, month){
       ev.preventDefault();
       try {
         await fetchBoardDetails(); // ensure householdId for members
-        // open modal in create mode with prefilled date
         await openTaskModal({ mode:'create', dateIso: iso });
       } catch(err){
         alert('Ошибка: ' + (err.message || err));
@@ -479,11 +517,21 @@ async function renderWeek(){
     const tasksDiv = document.createElement('div'); tasksDiv.className='tasks';
     (map[iso] || []).forEach(t => {
       const tdiv = document.createElement('div'); tdiv.className='task';
-      tdiv.textContent = (t.memberName ? '['+t.memberName+'] ' : '') + t.description;
       if (t.id) tdiv.dataset.taskId = t.id;
       if (t.memberId) tdiv.dataset.memberId = t.memberId;
       if (t.status) tdiv.dataset.status = t.status;
       if (t.date) tdiv.dataset.date = t.date;
+
+      // apply status class for color indicator
+      const sc = statusClass(t.status);
+      if (sc) tdiv.classList.add(sc);
+
+      const descSpan = document.createElement('span');
+      descSpan.className = 'task-desc';
+      const memberPart = t.memberName ? '['+t.memberName+'] ' : '';
+      descSpan.textContent = memberPart + (t.description || '');
+
+      tdiv.appendChild(descSpan);
 
       tdiv.addEventListener('click', (ev) => {
         ev.preventDefault();
@@ -537,8 +585,14 @@ async function renderWeek(){
 // ---------- navigation ----------
 const prevBtn = document.getElementById('prevMonth');
 const nextBtn = document.getElementById('nextMonth');
-if (prevBtn) prevBtn.addEventListener('click', async ()=>{ currentMonth--; if (currentMonth < 1) { currentMonth = 12; currentYear--; } await renderMonth(currentYear, currentMonth); });
-if (nextBtn) nextBtn.addEventListener('click', async ()=>{ currentMonth++; if (currentMonth > 12) { currentMonth = 1; currentYear++; } await renderMonth(currentYear, currentMonth); });
+if (prevBtn) prevBtn.addEventListener('click', async ()=>{
+  currentMonth--; if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+  await renderMonth(currentYear, currentMonth);
+});
+if (nextBtn) nextBtn.addEventListener('click', async ()=>{
+  currentMonth++; if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+  await renderMonth(currentYear, currentMonth);
+});
 
 // ---------- modal & setup (board create modal is unchanged) ----------
 function showCreateBoardModal(event){

@@ -12,7 +12,8 @@
      th:attr="data-board-id=${boardId}, data-year=${year}, data-month=${month}, data-title=${title}"
      style="display:none"></div>
 
-<h1 id="pageTitle" th:text="${title} + ' ' + ${year} + '-' + ${month}">Board</h1>
+<!-- Заголовок теперь управляется JS: "${title} на <месяц>" -->
+<h1 id="pageTitle" th:text="${title}">Board</h1>
 
 <div class="controls" style="text-align:center;">
   <button id="prevMonth">Prev</button>

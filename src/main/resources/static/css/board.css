@@ -249,17 +249,24 @@ h1, h2, h3 {
 
 /* ======= Задачи ======= */
 .task {
-    background: #d1f0d1;
-    border-left: 4px solid #4caf50;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     padding: 6px 8px;
     margin: 6px 0;
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 13px;
     text-align: left;
+    /* по умолчанию нейтральная тонкая граница слева */
+    border-left: 6px solid transparent;
+    transition: background .12s ease, transform .08s ease;
+    overflow: hidden;
 }
 
+/* на hover слегка подсвечиваем карточку */
 .task:hover {
-    background: #b8e5b8;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
 }
 
 /* ======= Модальное окно — общие стили (без изменений по стилю, немного выровнены) ======= */
@@ -417,4 +424,38 @@ h1, h2, h3 {
     .container { flex-direction: column; }
     .week-column { width: 100%; max-width: none; min-width: 0; order: 2; }
     .container > div:first-child { order: 1; }
+}
+
+/* ====== Task status badge ====== */
+.task { display: flex; gap: 8px; align-items: center; }
+.task-status {
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f0ecfb;
+  color: #5a3b73;
+  font-weight: 600;
+  white-space: nowrap;
+}
+/* Цвета статусов (левый бордер + лёгкий фон) */
+.task--todo {
+    border-left-color: #e74c3c; /* красный */
+    background: rgba(231,76,60,0.04);
+}
+.task--in-progress {
+    border-left-color: #3498db; /* синий */
+    background: rgba(52,152,219,0.04);
+}
+.task--done {
+    border-left-color: #27ae60; /* зелёный */
+    background: rgba(39,174,96,0.04);
+}
+/* текст описания занимает всё доступное место и не ломает layout */
+.task-desc {
+    display: inline-block;
+    flex: 1 1 auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
