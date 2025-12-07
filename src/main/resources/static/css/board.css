@@ -1,13 +1,11 @@
-/* ======= Полный CSS для доски (увеличенные ячейки, плотные карточки задач) ======= */
-
+/* ======= Общие стили (обновлённые) ======= */
 * { box-sizing: border-box; }
 
 body {
     font-family: "Segoe UI", Arial, sans-serif;
-    background: #f3f6f4;
+    background: #f3f6f4; /* светлый салатовый фон */
     margin: 0;
     padding: 20px;
-    color: #222;
 }
 
 h1, h2, h3 {
@@ -18,46 +16,44 @@ h1, h2, h3 {
 }
 
 /* Кнопки навигации */
-.controls {
-    text-align: center;
-    margin-bottom: 12px;
-}
 .controls button {
-    background: #a0d6b4;
+    background: #a0d6b4; /* мягкий салатовый */
     color: #fff;
     border: none;
-    padding: 8px 14px;
+    padding: 8px 16px;
     font-size: 14px;
     border-radius: 6px;
     cursor: pointer;
-    transition: background 0.18s ease, transform 0.06s ease;
+    transition: background 0.3s ease;
 }
-.controls button:hover { background: #88c99e; transform: translateY(-1px); }
-.controls #openCreateBoard { background: #bfa0e0; }
-.controls #openCreateBoard:hover { background: #a386d1; }
+
+.controls button:hover {
+    background: #88c99e; /* немного темнее */
+}
 
 /* ======= Контейнер месяца + недели ======= */
 .container {
-    display: flex;
-    gap: 18px;
-    max-width: 1400px;
+    display: flex;           /* горизонтальный layout */
+    gap: 12px;               /* уменьшил расстояние между колонками */
+    max-width: 1200px;
     margin: 0 auto;
     align-items: flex-start;
     padding: 0 10px;
+    overflow-x: auto;
 }
 
-/* Левая колонка содержит weekday-row + month-grid */
+/* Левый блок хранит weekday-row + month-grid */
 .container > div:first-child {
     flex: 1 1 auto;
-    min-width: 0;
+    min-width: 0; /* важно, чтобы содержимое могло корректно сжиматься */
 }
 
 /* ======= Weekday header ====== */
 .weekday-row {
   display: grid;
-  grid-template-columns: repeat(7, minmax(160px, 1fr));
-  gap: 14px;
-  margin: 0 0 12px 0;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px; /* уменьшен gap */
+  margin: 0 0 8px 0;
   padding: 0;
   width: 100%;
   min-width: 0;
@@ -65,64 +61,60 @@ h1, h2, h3 {
 
 .weekday {
   text-align: center;
-  font-weight: 800;
+  font-weight: 700;
   color: #2d572c;
-  padding: 12px 8px;
-  background: rgba(234,246,234,0.0);
-  font-size: 15px;
-  border-radius: 6px;
-  user-select: none;
+  padding: 8px 6px;
+  background: transparent;
+  font-size: 13px;
 }
 
 /* ======= Сетка месяца ======= */
+/* minmax(0,1fr) — безопасно внутри flex-контейнера */
 .month-grid {
     display: grid;
-    grid-template-columns: repeat(7, minmax(160px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 8px; /* уменьшен gap между ячейками */
     flex: 1 1 auto;
     min-width: 0;
 }
 
 /* ======= Ячейка дня месяца ======= */
 .day-cell {
-    background: #eaf6ea;
+    background: #eaf6ea; /* светлый салатовый */
     border: 1px solid #c2e2c2;
+    min-height: 200px; /* как просил — увеличили */
     display: flex;
     flex-direction: column;
-    border-radius: 10px;
-    padding: 12px;
-    font-size: 15px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-    transition: transform 0.08s, background 0.18s;
+    border-radius: 8px;
+    padding: 6px;
+    font-size: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    transition: transform 0.1s, background 0.2s;
     overflow: hidden;
-    min-height: 280px;   /* Увеличено: теперь минимум 280px */
-    max-height: 480px;
 }
 
-/* hover */
 .day-cell:hover {
-    transform: translateY(-4px);
-    background: #d9efd9;
+    transform: scale(1.01); /* небольшая анимация, уменьшил эффект масштабирования */
+    background: #d1e9d1;
 }
 
-/* пустая/заполнительная ячейка */
+/* Пустая/заполнительная ячейка (неактивная) */
 .day-cell.empty {
   background: transparent;
   border: none;
   box-shadow: none;
-  min-height: 0;
+  min-height: 40px;
   pointer-events: none;
   opacity: 0;
 }
 
-/* Заголовок дня (номер + краткий день недели) */
+/* Заголовок дня */
 .day-header {
-    font-weight: 800;
-    margin-bottom: 10px;
+    font-weight: 600;
+    margin-bottom: 6px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    font-size: 14px;
+    font-size: 13px;
     color: #2d572c;
 }
 
@@ -132,44 +124,52 @@ h1, h2, h3 {
     min-height: 0;
     overflow-y: auto;
     padding-right: 6px;
-    margin-bottom: 8px;
 }
 
 /* ======= Форма добавления ======= */
+/* Сделал форму компактнее: меньше padding, меньший font-size и компактная кнопка */
 .add-form {
     display: flex;
-    gap: 10px;
-    margin-top: 8px;
+    gap: 6px;
+    margin-top: 6px;
     align-items: center;
 }
 
 .add-form input {
     flex: 1;
     min-width: 0;
-    padding: 10px 12px;
-    border: 1px solid #cfded0;
-    border-radius: 8px;
-    font-size: 15px;
-    background: #fff;
+    padding: 6px 8px;     /* чуть меньше чем раньше */
+    border: 1px solid #c2e2c2;
+    border-radius: 6px;
+    font-size: 13px;      /* чуть меньше, но читабельно */
+    height: 32px;         /* фиксированная высота для аккуратности */
 }
 
 .add-form button {
-    background: #bfa0e0;
+    background: #bfa0e0; /* мягкий сиреневый */
     border: none;
     color: #fff;
-    padding: 8px 12px;
-    border-radius: 8px;
+    padding: 6px 10px;    /* уменьшена площадь кнопки */
+    border-radius: 6px;
     cursor: pointer;
+    height: 32px;         /* выравнивание по высоте */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
 }
-.add-form button:hover { background: #a386d1; }
 
-/* ======= Столбец недели (правый столбец) ======= */
+.add-form button:hover {
+    background: #a386d1;
+}
+
+/* ======= Столбец недели (фиксированная ширина, уменьшена) ======= */
 .week-column {
     display: flex;
     flex-direction: column;
-    flex: 0 0 170px; /* чуть уменьшен относительно предыдущего варианта */
-    max-width: 170px;
-    min-width: 150px;
+    flex: 0 0 220px; /* уменьшил ширину правой колонки */
+    max-width: 220px;
+    min-width: 180px;
 }
 
 /* Ячейка дня недели */
@@ -177,41 +177,38 @@ h1, h2, h3 {
     background: #f3eaf6;
     border: 1px solid #d2c2e0;
     border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 12px;
+    padding: 8px;
+    margin-bottom: 10px;
     display: flex;
     flex-direction: column;
-    min-height: 140px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    min-height: 120px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     overflow: hidden;
 }
 
-/* заголовок внутри дня недели */
 .week-day .day-header {
     color: #5a3b73;
     font-size: 13px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
-/* область задач внутри недели — прокручиваемая */
+/* внутри дни недели — прокручиваемая область задач */
 .week-day .tasks { overflow-y: auto; margin-top: 6px; }
 
-/* ======= Задачи (плотные карточки) ======= */
+/* ======= Задачи ======= */
 .task {
     background: #d1f0d1;
     border-left: 4px solid #4caf50;
-    padding: 6px 8px;     /* уменьшено padding для плотности */
-    margin: 6px 0;        /* уменьшено расстояние между карточками */
-    border-radius: 7px;
-    font-size: 14px;      /* чуть меньше шрифт чтобы влезало больше текста */
+    padding: 6px 8px; /* чуть больше отступы для читабельности */
+    margin: 6px 0;
+    border-radius: 4px;
+    font-size: 13px;
     text-align: left;
-    line-height: 1.2;
-    word-break: break-word;
-    max-height: 96px;     /* предотвращаем чрезмерное расширение карточек */
-    overflow: hidden;
 }
 
-.task:hover { background: #cfeec2; }
+.task:hover {
+    background: #b8e5b8;
+}
 
 /* ======= Модальное окно — создание новой доски ======= */
 .modal {
@@ -229,12 +226,13 @@ h1, h2, h3 {
     background: #ffffff;
     padding: 18px;
     border-radius: 10px;
-    width: 560px;
+    width: 480px;
     max-width: 96%;
     box-shadow: 0 10px 30px rgba(0,0,0,0.12);
     border: 1px solid rgba(140, 200, 150, 0.12);
 }
 
+/* Заголовок внутри модала */
 .modal-content h3 {
     margin: 0 0 10px;
     font-size: 18px;
@@ -242,6 +240,7 @@ h1, h2, h3 {
     text-align: left;
 }
 
+/* Строка формы */
 .form-row {
     margin: 8px 0;
     display: flex;
@@ -250,12 +249,13 @@ h1, h2, h3 {
 }
 
 .form-row label {
-    min-width: 92px;
+    min-width: 88px;
     color: #3a5c3a;
     font-size: 13px;
     font-weight: 600;
 }
 
+/* Входы и селекты */
 .form-row input[type="text"],
 .form-row input[type="number"],
 .form-row select {
@@ -273,12 +273,13 @@ h1, h2, h3 {
 .form-row select:focus {
     outline: none;
     border-color: #88c99e;
-    box-shadow: 0 0 0 3px rgba(136,201,158,0.10);
+    box-shadow: 0 0 0 3px rgba(136,201,158,0.12);
 }
 
 #cb-new-household-row { display: flex; margin-top: 6px; }
 #cb-new-household-row input { flex: 1; }
 
+/* Buttons modal */
 .form-actions {
     margin-top: 12px;
     display: flex;
@@ -287,39 +288,34 @@ h1, h2, h3 {
     align-items: center;
 }
 
-.form-actions button {
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 14px;
-    border: none;
-    cursor: pointer;
-    transition: background .18s ease, transform .06s ease;
-}
-
 #cb-create-btn { background: #a0d6b4; color: #fff; }
 #cb-create-btn:hover { background: #88c99e; transform: translateY(-1px); }
 
-#cb-cancel-btn { background: #f0f0f0; color: #333; border: 1px solid #e6e6e6; }
+#cb-cancel-btn {
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #e6e6e6;
+}
 #cb-cancel-btn:hover { background: #e9e9e9; }
 
 #cb-error { color: #b00020; font-size: 13px; margin-top: 8px; }
 
-/* Responsive adjustments */
-@media (max-width: 1200px) {
-  .month-grid { grid-template-columns: repeat(7, minmax(120px, 1fr)); gap: 12px; }
-  .weekday-row { grid-template-columns: repeat(7, minmax(120px, 1fr)); gap: 12px; }
-  .day-cell { min-height: 240px; max-height: 420px; padding: 10px; }
-  .week-column { flex: 0 0 150px; max-width: 150px; min-width: 130px; }
-  .week-day { min-height: 120px; padding: 10px; }
-  .task { font-size: 13px; padding: 5px 7px; max-height: 88px; }
+.controls #openCreateBoard { background: #bfa0e0; color: #fff; }
+.controls #openCreateBoard:hover { background: #a386d1; }
+
+/* Responsive tweaks */
+@media (max-width: 900px) {
+  .month-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+  .container { gap: 10px; padding: 0 8px; }
+  .week-column { flex: 0 0 180px; max-width: 180px; min-width: 140px; }
+  .weekday-row { gap: 6px; }
 }
 
-@media (max-width: 800px) {
-  .container { flex-direction: column; }
-  .week-column { width: 100%; max-width: none; min-width: 0; order: 2; }
-  .container > div:first-child { order: 1; }
-  .month-grid { grid-template-columns: repeat(7, minmax(56px, 1fr)); gap: 6px; }
-  .weekday-row { grid-template-columns: repeat(7, minmax(56px, 1fr)); gap: 6px; margin-bottom: 6px; }
-  .day-cell { min-height: 110px; max-height: none; padding: 8px; }
-  .task { font-size: 12px; padding: 4px 6px; }
+@media (max-width: 520px) {
+    .modal-content { width: 96%; padding: 14px; border-radius: 8px; }
+    .form-row { flex-direction: column; align-items: stretch; }
+    .form-row label { min-width: auto; margin-bottom: 4px; }
+    .container { flex-direction: column; }
+    .week-column { width: 100%; max-width: none; min-width: 0; order: 2; }
+    .container > div:first-child { order: 1; }
 }

@@ -1,5 +1,5 @@
 /* ===================== board.js ===================== */
-/* Календарь + неделя + создание/удаление задач (интеграция с /api) */
+/* Календарь + неделя + модалка для создания/редактирования задач (интеграция с /api) */
 
 const boardData = document.getElementById("boardData");
 const BOARD_ID = boardData ? parseInt(boardData.dataset.boardId, 10) : 0;
@@ -14,6 +14,13 @@ const weekdayRow = document.getElementById("weekdayRow");
 let currentYear = Number.isFinite(initialYear) ? initialYear : (new Date()).getFullYear();
 let currentMonth = Number.isFinite(initialMonth) ? initialMonth : ((new Date()).getMonth() + 1);
 
+// cache for household and members
+let boardHouseholdId = null;
+let membersCache = null; // array of {id, name}
+
+// possible statuses
+const STATUSES = ['TODO', 'IN_PROGRESS', 'DONE'];
+
 // ---------- helpers ----------
 function pad(n){ return n < 10 ? '0' + n : '' + n; }
 function formatIso(date) {
@@ -26,7 +33,6 @@ function getDaysInMonth(y,m){ return new Date(y, m, 0).getDate(); }
 function firstDayIso(y,m){ return formatIsoFromYMD(y, m, 1); }
 function lastDayIso(y,m){ return formatIsoFromYMD(y, m, getDaysInMonth(y,m)); }
 function mondayOf(date){
-  // возвращает Date для понедельника той недели
   const d = new Date(date);
   const weekday = (d.getDay() + 6) % 7; // 0=Mon
   d.setDate(d.getDate() - weekday);
@@ -39,7 +45,6 @@ async function safeFetchJson(url, opts){
   try{
     const res = await fetch(url, opts);
     if (!res.ok) {
-      // try parse body if possible for debugging
       let txt = await res.text().catch(()=>null);
       throw new Error(txt || `HTTP ${res.status}`);
     }
@@ -50,11 +55,44 @@ async function safeFetchJson(url, opts){
   }
 }
 
+async function fetchBoardDetails(){
+  if (!BOARD_ID) return null;
+  if (boardHouseholdId !== null) return { householdId: boardHouseholdId };
+  try {
+    const dto = await safeFetchJson(`/api/boards/${BOARD_ID}`);
+    // dto may be BoardDTO with householdId
+    boardHouseholdId = dto && dto.householdId ? dto.householdId : null;
+    return { householdId: boardHouseholdId, dto };
+  } catch(e){
+    console.warn("fetchBoardDetails failed", e);
+    boardHouseholdId = null;
+    return null;
+  }
+}
+
+async function fetchMembersForBoard(){
+  // try to return cached members
+  if (Array.isArray(membersCache)) return membersCache;
+  const b = await fetchBoardDetails();
+  if (!b || !b.householdId) {
+    membersCache = [];
+    return membersCache;
+  }
+  try {
+    const list = await safeFetchJson(`/api/members/household/${b.householdId}`);
+    membersCache = Array.isArray(list) ? list : [];
+    return membersCache;
+  } catch(e){
+    console.warn("fetchMembersForBoard failed", e);
+    membersCache = [];
+    return membersCache;
+  }
+}
+
 async function fetchMonthTasks(boardId, year, month){
   if (!boardId) return [];
   const from = firstDayIso(year, month);
   const to = lastDayIso(year, month);
-  // backend: GET /api/tasks/board/{boardId}/month?from=yyyy-MM-dd&to=yyyy-MM-dd
   const url = `/api/tasks/board/${boardId}/month?from=${from}&to=${to}`;
   return await safeFetchJson(url);
 }
@@ -65,9 +103,9 @@ async function fetchWeekTasks(boardId, weekStartIso){
   return await safeFetchJson(url);
 }
 
-async function createTask(boardId, dateIso, description){
+async function createTaskRequest(boardId, dateIso, description, memberId = null, status = 'TODO'){
   if (!boardId) throw new Error("Board id is required");
-  const payload = { boardId, date: dateIso, description, memberId: null };
+  const payload = { boardId, date: dateIso, description, memberId, status };
   const res = await fetch('/api/tasks', {
     method: 'POST',
     headers: { 'Content-Type':'application/json' },
@@ -80,6 +118,21 @@ async function createTask(boardId, dateIso, description){
   return await res.json();
 }
 
+async function updateTaskRequest(taskId, dateIso, description, memberId, status){
+  if (!taskId) throw new Error("taskId required");
+  const payload = { boardId: BOARD_ID, date: dateIso, description, memberId, status };
+  const res = await fetch(`/api/tasks/${taskId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(()=>null);
+    throw new Error(txt || `Update failed ${res.status}`);
+  }
+  return await res.json();
+}
+
 async function deleteTask(taskId){
   const res = await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
   if (!res.ok) {
@@ -87,6 +140,211 @@ async function deleteTask(taskId){
     throw new Error(txt || `Delete failed ${res.status}`);
   }
   return true;
+}
+
+// ---------- modal creation & helpers ----------
+function ensureTaskModalExists(){
+  if (document.getElementById('taskModal')) return; // already present
+
+  const html = `
+  <div class="modal" id="taskModal" style="display:none;">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="tm-title" style="width:420px; max-width:96%;">
+      <h3 id="tm-title">Задача</h3>
+
+      <div class="form-row">
+        <label>Дата</label>
+        <input id="tm-date" type="date" />
+      </div>
+
+      <div class="form-row" style="align-items:flex-start;">
+        <label>Описание</label>
+        <textarea id="tm-desc" rows="3" style="flex:1; padding:8px; font-size:13px; resize:vertical;"></textarea>
+      </div>
+
+      <div class="form-row">
+        <label>Участник</label>
+        <select id="tm-member-select">
+          <option value="">(Загрузка...)</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label>Статус</label>
+        <select id="tm-status-select">
+        </select>
+      </div>
+
+      <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:10px;">
+        <button id="tm-save-btn" class="btn-primary">Сохранить</button>
+        <button id="tm-delete-btn" style="background:#f77; color:#fff; border:none; padding:6px 10px; border-radius:6px; display:none;">Удалить</button>
+        <button id="tm-cancel-btn">Отмена</button>
+      </div>
+
+      <div id="tm-error" style="color:crimson; margin-top:8px; display:none;"></div>
+    </div>
+  </div>
+  `;
+
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = html;
+  document.body.appendChild(wrapper);
+
+  // populate status select
+  const statusSel = document.getElementById('tm-status-select');
+  STATUSES.forEach(s => {
+    const o = document.createElement('option'); o.value = s; o.textContent = s.replace('_',' ');
+    statusSel.appendChild(o);
+  });
+
+  // bind buttons
+  document.getElementById('tm-cancel-btn').addEventListener('click', hideTaskModal);
+  document.getElementById('tm-delete-btn').addEventListener('click', async (e) => {
+    const id = e.currentTarget.dataset.taskId;
+    if (!id) return;
+    if(!confirm('Удалить задачу?')) return;
+    try {
+      await deleteTask(id);
+      hideTaskModal();
+      await renderMonth(currentYear, currentMonth);
+      await renderWeek();
+    } catch(err){
+      showTaskError(err.message || err);
+    }
+  });
+  document.getElementById('tm-save-btn').addEventListener('click', async (e) => {
+    try {
+      await submitTaskModal();
+    } catch(err){
+      showTaskError(err.message || err);
+    }
+  });
+
+  // close modal by clicking backdrop
+  const modal = document.getElementById('taskModal');
+  modal.addEventListener('click', (ev) => {
+    if (ev.target === modal) hideTaskModal();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTaskModal(); });
+}
+
+function showTaskError(msg){
+  const el = document.getElementById('tm-error');
+  if (!el) return;
+  el.style.display = 'block';
+  el.textContent = msg;
+}
+
+function hideTaskError(){
+  const el = document.getElementById('tm-error');
+  if (!el) return;
+  el.style.display = 'none';
+  el.textContent = '';
+}
+
+async function populateMemberSelect(){
+  const sel = document.getElementById('tm-member-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">(нет)</option>';
+  const members = await fetchMembersForBoard();
+  members.forEach(m => {
+    const o = document.createElement('option'); o.value = m.id; o.textContent = m.name; sel.appendChild(o);
+  });
+}
+
+async function openTaskModal({ mode = 'create', dateIso = null, task = null } = {}){
+  ensureTaskModalExists();
+  hideTaskError();
+
+  // ensure members loaded
+  try { await fetchMembersForBoard(); } catch(e){ /* ignore */ }
+
+  const modal = document.getElementById('taskModal');
+  const dateEl = document.getElementById('tm-date');
+  const descEl = document.getElementById('tm-desc');
+  const memberSel = document.getElementById('tm-member-select');
+  const statusSel = document.getElementById('tm-status-select');
+  const deleteBtn = document.getElementById('tm-delete-btn');
+  const saveBtn = document.getElementById('tm-save-btn');
+
+  // fill member select
+  await populateMemberSelect();
+
+  if (mode === 'create') {
+    // reset fields
+    deleteBtn.style.display = 'none';
+    deleteBtn.dataset.taskId = '';
+    saveBtn.dataset.mode = 'create';
+    saveBtn.dataset.taskId = '';
+
+    if (dateIso) {
+      // yyyy-mm-dd -> set to input
+      dateEl.value = dateIso;
+    } else {
+      const today = new Date();
+      dateEl.value = formatIso(today);
+    }
+    descEl.value = '';
+    // select none by default
+    memberSel.value = '';
+    statusSel.value = 'TODO';
+    document.getElementById('tm-title').textContent = 'Новая задача';
+  } else {
+    // edit
+    if (!task) {
+      showTaskError('Нет данных задачи для редактирования');
+      return;
+    }
+    deleteBtn.style.display = 'inline-block';
+    deleteBtn.dataset.taskId = task.id;
+    saveBtn.dataset.mode = 'edit';
+    saveBtn.dataset.taskId = task.id;
+
+    dateEl.value = task.date || '';
+    descEl.value = task.description || '';
+    memberSel.value = task.memberId ? String(task.memberId) : '';
+    statusSel.value = task.status || 'TODO';
+    document.getElementById('tm-title').textContent = 'Редактировать задачу';
+  }
+
+  modal.style.display = 'flex';
+  // focus desc
+  setTimeout(()=> descEl.focus(), 80);
+}
+
+function hideTaskModal(){
+  const modal = document.getElementById('taskModal');
+  if (modal) modal.style.display = 'none';
+  hideTaskError();
+}
+
+// submit handler used for both create and edit
+async function submitTaskModal(){
+  const saveBtn = document.getElementById('tm-save-btn');
+  const mode = saveBtn.dataset.mode || 'create';
+  const taskId = saveBtn.dataset.taskId;
+  const date = document.getElementById('tm-date').value;
+  const desc = document.getElementById('tm-desc').value && document.getElementById('tm-desc').value.trim();
+  const memberVal = document.getElementById('tm-member-select').value;
+  const memberId = memberVal ? parseInt(memberVal, 10) : null;
+  const status = document.getElementById('tm-status-select').value || 'TODO';
+
+  if (!date) return showTaskError('Укажите дату');
+  if (!desc) return showTaskError('Введите описание');
+
+  try {
+    if (mode === 'create') {
+      if (!BOARD_ID) throw new Error('Доска не задана');
+      await createTaskRequest(BOARD_ID, date, desc, memberId, status);
+    } else {
+      if (!taskId) throw new Error('Id задачи отсутствует');
+      await updateTaskRequest(taskId, date, desc, memberId, status);
+    }
+    hideTaskModal();
+    await renderMonth(currentYear, currentMonth);
+    await renderWeek();
+  } catch(err){
+    showTaskError(err.message || String(err));
+  }
 }
 
 // ---------- rendering ----------
@@ -138,36 +396,55 @@ async function renderMonth(year, month){
       tdiv.className='task';
       tdiv.textContent = (t.memberName ? '['+t.memberName+'] ' : '') + t.description;
       if (t.id) tdiv.dataset.taskId = t.id;
-      // add delete on right-click
+      if (t.memberId) tdiv.dataset.memberId = t.memberId;
+      if (t.status) tdiv.dataset.status = t.status;
+      if (t.date) tdiv.dataset.date = t.date;
+      // left click -> edit modal
+      tdiv.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const taskObj = {
+          id: t.id,
+          date: t.date,
+          description: t.description,
+          memberId: t.memberId,
+          status: t.status
+        };
+        openTaskModal({ mode:'edit', task: taskObj }).catch(e => console.warn(e));
+      });
+      // right-click -> delete
       tdiv.addEventListener('contextmenu', async (ev) => {
         ev.preventDefault();
         if (!confirm('Удалить задачу?')) return;
         try {
           await deleteTask(t.id);
           await renderMonth(currentYear, currentMonth);
-          await renderWeek(); // обновим правую колонку
+          await renderWeek();
         } catch(err){ alert('Ошибка удаления: ' + (err.message || err)); }
       });
       tasksDiv.appendChild(tdiv);
     });
     cell.appendChild(tasksDiv);
 
-    // add form
+    // add button (opens modal)
     const form = document.createElement('form'); form.className='add-form';
     const input = document.createElement('input'); input.type='text'; input.placeholder='Новая задача...';
     const btn = document.createElement('button'); btn.type='submit'; btn.textContent = '+';
+    // clicking + opens modal with prefilled date and optional description from input
     form.appendChild(input); form.appendChild(btn);
     form.addEventListener('submit', async (ev)=>{
       ev.preventDefault();
       const desc = input.value && input.value.trim();
-      if (!desc) return alert('Введите описание задачи');
+      // open modal in create mode, set description if provided
       try {
-        const created = await createTask(BOARD_ID, iso, desc);
-        input.value = '';
-        await renderMonth(currentYear, currentMonth);
-        await renderWeek();
+        await fetchBoardDetails(); // ensure householdId for members
+        await openTaskModal({ mode:'create', dateIso: iso });
+        // set desc after modal created
+        if (desc) {
+          const descEl = document.getElementById('tm-desc');
+          if (descEl) descEl.value = desc;
+        }
       } catch(err){
-        alert('Ошибка создания: ' + (err.message || err));
+        alert('Ошибка: ' + (err.message || err));
       }
     });
 
@@ -207,6 +484,22 @@ async function renderWeek(){
       const tdiv = document.createElement('div'); tdiv.className='task';
       tdiv.textContent = (t.memberName ? '['+t.memberName+'] ' : '') + t.description;
       if (t.id) tdiv.dataset.taskId = t.id;
+      if (t.memberId) tdiv.dataset.memberId = t.memberId;
+      if (t.status) tdiv.dataset.status = t.status;
+      if (t.date) tdiv.dataset.date = t.date;
+
+      tdiv.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const taskObj = {
+          id: t.id,
+          date: t.date,
+          description: t.description,
+          memberId: t.memberId,
+          status: t.status
+        };
+        openTaskModal({ mode:'edit', task: taskObj }).catch(e => console.warn(e));
+      });
+
       tdiv.addEventListener('contextmenu', async (ev) => {
         ev.preventDefault();
         if (!confirm('Удалить задачу?')) return;
@@ -220,7 +513,7 @@ async function renderWeek(){
     });
     div.appendChild(tasksDiv);
 
-    // add form
+    // add button -> modal create
     const form = document.createElement('form'); form.className='add-form';
     const input = document.createElement('input'); input.type='text'; input.placeholder='Добавить...';
     const btn = document.createElement('button'); btn.type='submit'; btn.textContent = '+';
@@ -228,13 +521,16 @@ async function renderWeek(){
     form.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const desc = input.value && input.value.trim();
-      if (!desc) return alert('Введите описание');
       try {
-        await createTask(BOARD_ID, iso, desc);
-        input.value = '';
-        await renderMonth(currentYear, currentMonth);
-        await renderWeek();
-      } catch(err){ alert('Ошибка создания: ' + (err.message || err)); }
+        await fetchBoardDetails();
+        await openTaskModal({ mode:'create', dateIso: iso });
+        if (desc) {
+          const descEl = document.getElementById('tm-desc');
+          if (descEl) descEl.value = desc;
+        }
+      } catch(err){
+        alert('Ошибка: ' + (err.message || err));
+      }
     });
 
     div.appendChild(form);
@@ -245,18 +541,11 @@ async function renderWeek(){
 // ---------- navigation ----------
 const prevBtn = document.getElementById('prevMonth');
 const nextBtn = document.getElementById('nextMonth');
-if (prevBtn) prevBtn.addEventListener('click', async ()=>{
-  currentMonth--; if (currentMonth < 1) { currentMonth = 12; currentYear--; }
-  await renderMonth(currentYear, currentMonth);
-});
-if (nextBtn) nextBtn.addEventListener('click', async ()=>{
-  currentMonth++; if (currentMonth > 12) { currentMonth = 1; currentYear++; }
-  await renderMonth(currentYear, currentMonth);
-});
+if (prevBtn) prevBtn.addEventListener('click', async ()=>{ currentMonth--; if (currentMonth < 1) { currentMonth = 12; currentYear--; } await renderMonth(currentYear, currentMonth); });
+if (nextBtn) nextBtn.addEventListener('click', async ()=>{ currentMonth++; if (currentMonth > 12) { currentMonth = 1; currentYear++; } await renderMonth(currentYear, currentMonth); });
 
-// ---------- modal & setup ----------
+// ---------- modal & setup (board create modal is unchanged) ----------
 function showCreateBoardModal(event){
-  // allow only real user interaction
   if (!(event && event.isTrusted)) return;
   const modal = document.getElementById('createBoardModal');
   if (!modal) return;
@@ -313,7 +602,7 @@ async function submitCreateBoard(){
     if (createdBoard && createdBoard.id) window.location.href = `/boards/${createdBoard.id}`;
     else throw new Error('Пустой ответ сервера');
   } catch(e){
-    if (err) { err.style.display='block'; err.textContent = e.message || 'Ошибка'; }
+    if (err) { err.style.display = 'block'; err.textContent = e.message || 'Ошибка'; }
     console.warn('submitCreateBoard error', e);
   }
 }
@@ -331,7 +620,7 @@ async function createBoardRequest(payload){
 
 // bind
 document.addEventListener('DOMContentLoaded', ()=>{
-  // hide modal if visible before JS
+  // hide createBoard modal if visible before JS
   const modal = document.getElementById('createBoardModal'); if (modal) modal.style.display = 'none';
 
   const openBtn = document.getElementById('openCreateBoard');
@@ -341,6 +630,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if (openBtn) openBtn.addEventListener('click', (e)=> showCreateBoardModal(e));
   if (cancelBtn) cancelBtn.addEventListener('click', hideCreateBoardModal);
   if (createBtn) createBtn.addEventListener('click', submitCreateBoard);
+
+  // ensure task modal exists early (but hidden). We'll populate members on open.
+  ensureTaskModalExists();
 });
 
 // initial render
