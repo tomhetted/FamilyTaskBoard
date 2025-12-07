@@ -425,30 +425,27 @@ async function renderMonth(year, month){
     });
     cell.appendChild(tasksDiv);
 
-    // add button (opens modal)
-    const form = document.createElement('form'); form.className='add-form';
-    const input = document.createElement('input'); input.type='text'; input.placeholder='Новая задача...';
-    const btn = document.createElement('button'); btn.type='submit'; btn.textContent = '+';
-    // clicking + opens modal with prefilled date and optional description from input
-    form.appendChild(input); form.appendChild(btn);
-    form.addEventListener('submit', async (ev)=>{
+    // add button (opens modal) — replaced input+submit with single button
+    const actions = document.createElement('div');
+    actions.className = 'add-action';
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'btn-add-task';
+    addBtn.textContent = 'Добавить задачу';
+    addBtn.setAttribute('aria-label', `Добавить задачу ${iso}`);
+    addBtn.addEventListener('click', async (ev) => {
       ev.preventDefault();
-      const desc = input.value && input.value.trim();
-      // open modal in create mode, set description if provided
       try {
         await fetchBoardDetails(); // ensure householdId for members
+        // open modal in create mode with prefilled date
         await openTaskModal({ mode:'create', dateIso: iso });
-        // set desc after modal created
-        if (desc) {
-          const descEl = document.getElementById('tm-desc');
-          if (descEl) descEl.value = desc;
-        }
       } catch(err){
         alert('Ошибка: ' + (err.message || err));
       }
     });
+    actions.appendChild(addBtn);
+    cell.appendChild(actions);
 
-    cell.appendChild(form);
     monthGrid.appendChild(cell);
   }
 
@@ -513,27 +510,26 @@ async function renderWeek(){
     });
     div.appendChild(tasksDiv);
 
-    // add button -> modal create
-    const form = document.createElement('form'); form.className='add-form';
-    const input = document.createElement('input'); input.type='text'; input.placeholder='Добавить...';
-    const btn = document.createElement('button'); btn.type='submit'; btn.textContent = '+';
-    form.appendChild(input); form.appendChild(btn);
-    form.addEventListener('submit', async (ev) => {
+    // add button -> modal create (no input)
+    const actions = document.createElement('div');
+    actions.className = 'add-action';
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'btn-add-task';
+    addBtn.textContent = 'Добавить задачу';
+    addBtn.setAttribute('aria-label', `Добавить задачу ${iso}`);
+    addBtn.addEventListener('click', async (ev) => {
       ev.preventDefault();
-      const desc = input.value && input.value.trim();
       try {
         await fetchBoardDetails();
         await openTaskModal({ mode:'create', dateIso: iso });
-        if (desc) {
-          const descEl = document.getElementById('tm-desc');
-          if (descEl) descEl.value = desc;
-        }
       } catch(err){
         alert('Ошибка: ' + (err.message || err));
       }
     });
+    actions.appendChild(addBtn);
+    div.appendChild(actions);
 
-    div.appendChild(form);
     weekContainer.appendChild(div);
   }
 }
