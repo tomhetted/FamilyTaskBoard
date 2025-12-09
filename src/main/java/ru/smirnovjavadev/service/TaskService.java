@@ -33,7 +33,7 @@ public class TaskService {
     }
 
     @Transactional
-    public Task create(Long boardId, LocalDate date, String description, Long memberId) {
+    public Task create(Long boardId, LocalDate date, String description, Long memberId, TaskStatus status) {
         if (boardId == null) throw new IllegalArgumentException("boardId is required");
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new IllegalArgumentException("Board not found"));
@@ -51,7 +51,7 @@ public class TaskService {
                 .member(member)
                 .date(date)
                 .description(description)
-                .status(TaskStatus.TODO)
+                .status(status)
                 .build();
 
         return taskRepository.save(task);

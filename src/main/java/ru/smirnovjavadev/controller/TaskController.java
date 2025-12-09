@@ -65,7 +65,8 @@ public class TaskController {
                     taskDto.getBoardId(),
                     taskDto.getDate(),
                     taskDto.getDescription(),
-                    taskDto.getMemberId()
+                    taskDto.getMemberId(),
+                    taskDto.getStatus()
             );
             TaskDTO body = TaskDTO.fromEntity(task);
             URI location = URI.create("/api/tasks/" + task.getId());
