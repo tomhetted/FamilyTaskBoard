@@ -83,18 +83,10 @@ public class TaskService {
     public List<Task> forWeek(Long boardId, LocalDate weekStart) {
         LocalDate weekEnd = weekStart.plusDays(6);
 
-        // Получаем ВСЕ рутинные задачи для этой доски
-        List<Task> allRoutines = taskRepository.findByBoardIdAndTaskType(boardId, TaskType.ROUTINE);
-
-        // Фильтруем по дню недели: какая рутинная задача должна отображаться в какой день
-        return allRoutines.stream()
-                .filter(task -> {
-                    // Для каждой рутинной задачи вычисляем, в какой день недели она должна показываться
-                    // task.getWeekDay() = 1 (понедельник) ... 7 (воскресенье)
-                    LocalDate taskDateInWeek = weekStart.plusDays(task.getWeekDay() - 1);
-                    return !taskDateInWeek.isBefore(weekStart) && !taskDateInWeek.isAfter(weekEnd);
-                })
-                .collect(Collectors.toList());
+        // Получаем рутинные задачи, дата которых попадает в эту неделю
+        // Теперь рутинные задачи имеют дату и не повторяются
+        return taskRepository.findAllByBoardIdAndTaskTypeAndDateBetweenOrderByDateAsc(
+                boardId, TaskType.ROUTINE, weekStart, weekEnd);
     }
 
     @Transactional

@@ -1,4 +1,4 @@
-/* ======= Цветовые переменные ======= */
+/* ===================== Цветовые переменные ===================== */
 :root {
     --accent-purple: #b085d6;
     --accent-purple-dark: #8b63b8;
@@ -8,13 +8,13 @@
 
     --grid-gap: 6px;
 
-    /* базовые размеры (можно тонко настроить) */
+    /* базовые размеры */
     --day-min-height: 200px;
     --day-padding: 4px;
     --day-font-size: 14px;
 }
 
-/* ======= Общие стили (темнее) ======= */
+/* ===================== Общие стили ===================== */
 * { box-sizing: border-box; }
 
 html, body {
@@ -24,7 +24,6 @@ html, body {
 }
 
 html {
-    /* фон страницы — градиент */
     background: linear-gradient(135deg, #92e0aa 0%, #b085d6 100%);
 }
 
@@ -42,7 +41,7 @@ h1, h2, h3 {
     color: #222;
 }
 
-/* ======= Кнопки навигации (prev/next/new board) – фиолетовые ======= */
+/* ===================== Кнопки навигации ===================== */
 .controls button {
     background: linear-gradient(180deg,var(--accent-purple), var(--accent-purple-dark));
     color: #ffffff;
@@ -54,30 +53,29 @@ h1, h2, h3 {
     transition: background 0.18s ease, transform 0.06s ease, box-shadow .06s;
     box-shadow: 0 6px 14px rgba(100,60,150,0.15);
 }
+
 .controls button:hover {
     background: #8f5fbd;
     transform: translateY(-1px);
 }
 
-/* ======= Контейнер ======= */
+/* ===================== Контейнер ===================== */
 .container {
     display: flex;
     gap: 12px;
     max-width: 1600px;
     margin: 0 auto;
-    /* по умолчанию выравнивание по верхнему краю, чтобы календарь и week-column начинались одинаково */
     align-items: flex-start;
     padding: 0 10px;
     overflow-x: auto;
 }
 
-/* Левый блок (месяц) — может сжиматься */
 .container > div:first-child {
     flex: 1 1 auto;
     min-width: 0;
 }
 
-/* ======= Weekday header ====== */
+/* ===================== Weekday header ===================== */
 .weekday-row {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -93,17 +91,16 @@ h1, h2, h3 {
   font-size: 12px;
 }
 
-/* ======= Month grid ======= */
+/* ===================== Month grid ===================== */
 .month-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: var(--grid-gap);
     flex: 1 1 auto;
     min-width: 0;
-    /* позволяем контейнеру прокручиваться горизонтально на очень узких экранах */
 }
 
-/* ======= Day cell ======= */
+/* ===================== Day cell ===================== */
 .day-cell {
     background: #d8e7d8;
     border: 1px solid #aacaaa;
@@ -142,7 +139,7 @@ h1, h2, h3 {
     color: rgba(35,66,35,0.8);
 }
 
-/* ======= Tasks container ======= */
+/* ===================== Tasks container ===================== */
 .tasks {
     flex: 1 1 auto;
     min-height: 0;
@@ -150,7 +147,7 @@ h1, h2, h3 {
     padding-right: 2px;
 }
 
-/* ======= Add form (временно) ======= */
+/* ===================== Add form ===================== */
 .add-form {
     display: flex;
     gap: 6px;
@@ -180,9 +177,10 @@ h1, h2, h3 {
     font-size: 13px;
     box-shadow: 0 6px 12px rgba(133,79,176,0.12);
 }
+
 .add-form button:hover { background: #8f5fbd; }
 
-/* ======= Add-task button ======= */
+/* ===================== Add-task button ===================== */
 .add-action {
     margin-top: 4px;
     display: flex;
@@ -207,8 +205,7 @@ h1, h2, h3 {
 
 .btn-add-task:hover { background: #a386d1; }
 
-/* ======= Week Column ======= */
-/* По умолчанию фиксированная/умеренная ширина — JS может синхронизировать точную ширину */
+/* ===================== Week Column ===================== */
 .week-column {
     display: flex;
     flex-direction: column;
@@ -219,14 +216,12 @@ h1, h2, h3 {
     align-items: stretch;
 }
 
-/* Заголовок колонки недели */
 .week-column > h3 {
     margin: 0 0 6px 0;
     padding-left: 4px;
     color: #234223;
 }
 
-/* Week-day cell */
 .week-day {
     background: #e4d7ed;
     border: 1px solid #bba8c8;
@@ -235,13 +230,17 @@ h1, h2, h3 {
     margin: 0;
     display: flex;
     flex-direction: column;
-    flex: 1 1 0; /* равномерно распределяем высоту в колонке */
+    flex: 1 1 0;
     box-shadow: 0 1px 3px rgba(0,0,0,0.12);
 }
 
-.week-day .day-header { color: #4b2e65; font-size: 13px; margin-bottom: 6px; }
+.week-day .day-header {
+    color: #4b2e65;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
 
-/* ======= Task card (цветовые статусы) ======= */
+/* ===================== Task card ===================== */
 .task {
     display: flex;
     align-items: center;
@@ -253,19 +252,36 @@ h1, h2, h3 {
     border-left: 6px solid transparent;
     transition: background .12s, transform .08s;
     overflow: hidden;
+    cursor: pointer;
 }
 
 .task--todo {
     border-left-color: #d64532;
     background: rgba(214,69,50,0.08);
 }
+
 .task--in-progress {
     border-left-color: #2c89c9;
     background: rgba(44,137,201,0.08);
 }
+
 .task--done {
     border-left-color: #229a55;
     background: rgba(34,154,85,0.08);
+}
+
+/* Стили для типов задач */
+.task--regular .task-type-indicator {
+    color: #2196f3;
+}
+
+.task--routine .task-type-indicator {
+    color: #ff9800;
+}
+
+.task-type-indicator {
+    margin-right: 6px;
+    font-size: 12px;
 }
 
 .task:hover {
@@ -280,10 +296,55 @@ h1, h2, h3 {
     text-overflow: ellipsis;
 }
 
-/* ========================================================= */
-/* ======================= MODALS ========================== */
-/* ========================================================= */
+/* ===================== Переключатель типа задачи ===================== */
+.task-type-toggle {
+    display: flex;
+    gap: 10px;
+    margin: 8px 0;
+}
 
+.task-type-option {
+    flex: 1;
+    cursor: pointer;
+}
+
+.task-type-option input[type="radio"] {
+    display: none;
+}
+
+.task-type-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 8px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: #f8f9fa;
+    transition: all 0.2s ease;
+    text-align: center;
+    font-size: 13px;
+}
+
+.task-type-option input[type="radio"]:checked + .task-type-label {
+    border-color: var(--accent-purple);
+    background: rgba(176, 133, 214, 0.1);
+    box-shadow: 0 2px 8px rgba(176, 133, 214, 0.2);
+}
+
+.task-type-icon {
+    font-size: 20px;
+    margin-bottom: 4px;
+}
+
+/* Подсказка для формы */
+.form-hint {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+    font-style: italic;
+}
+
+/* ===================== MODALS ===================== */
 .modal {
     position: fixed;
     inset: 0;
@@ -340,6 +401,7 @@ h1, h2, h3 {
     font-size: 14px;
     box-shadow: 0 4px 10px rgba(150,90,200,0.16);
 }
+
 .btn-primary:hover {
     background: var(--accent-purple-dark);
 }
@@ -352,6 +414,7 @@ h1, h2, h3 {
     border-radius: 6px;
     cursor: pointer;
 }
+
 .btn-secondary:hover {
     background: #b9c3b9;
 }
@@ -364,30 +427,26 @@ h1, h2, h3 {
     border-radius: 6px;
     cursor: pointer;
 }
+
 .btn-danger:hover {
     background: #b83425;
 }
 
 .hidden { display: none !important; }
 
-/* ========================= RESPONSIVE ========================= */
-
-/* Tablet / small desktop: колонки становятся вертикальными при недостатке места */
-/* === Force week-column under calendar on narrow screens === */
+/* ===================== RESPONSIVE ===================== */
 @media (max-width: 1100px) {
   .container {
     flex-direction: column !important;
-    align-items: stretch !important; /* растянет обе колонки по ширине */
+    align-items: stretch !important;
   }
 
-  /* левый контейнер (месяц) — первым */
   .container > div:first-child {
     order: 1 !important;
     width: 100% !important;
     max-width: none !important;
   }
 
-  /* week-column — становится вторым и занимает 100% ширины */
   .week-column {
     order: 2 !important;
     width: 100% !important;
@@ -395,25 +454,20 @@ h1, h2, h3 {
     max-width: none !important;
   }
 
-  /* сделаем, чтобы внутренние day-блоки недели шли друг за другом и занимали всю ширину */
   .week-column .week-day {
     width: 100% !important;
   }
 
-  /* если JS пытаетcя синхронизировать ширину — перекроем его inline-стили */
   .week-column[style] {
     width: 100% !important;
     min-width: 0 !important;
     max-width: none !important;
   }
 
-  /* удобство: немного уменьшить вертикальные отступы на планшете */
   .container { gap: 10px; }
   .month-grid { gap: 6px; }
 }
 
-
-/* Mobile: ещё компактнее, с сохранением читабельности */
 @media (max-width: 520px) {
     :root {
         --day-min-height: 120px;
@@ -421,28 +475,22 @@ h1, h2, h3 {
     }
 
     body { padding: 12px; }
-
     h1 { font-size: 18px; margin-bottom: 12px; }
-
     .controls button { padding: 6px 10px; font-size: 13px; }
     .controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 8px; }
-
     .month-grid { gap: 5px; }
     .day-cell { padding: 6px; border-radius: 8px; }
     .day-header { font-size: 11px; margin-bottom: 4px; }
     .weekday { font-size: 10px; padding: 4px 2px; }
-
     .btn-add-task { padding: 5px 8px; font-size: 12px; max-width: 120px; }
     .add-form input { height: 26px; font-size: 12px; }
-
     .week-column { gap: 8px; }
     .week-day { padding: 6px; }
-
-    /* пока month-grid остаётся 7 колонок, разрешаем горизонтальную прокрутку при очень узких экранах */
     .month-grid { overflow-x: auto; grid-auto-flow: column; grid-auto-columns: minmax(120px, 1fr); }
+    .task-type-toggle { flex-direction: column; }
+    .task-type-label { padding: 10px 6px; }
 }
 
-/* Доп. мелкие улучшения: если контейнер очень широкий, чуть увеличим ячейки */
 @media (min-width: 1400px) {
     :root {
         --day-min-height: 220px;
