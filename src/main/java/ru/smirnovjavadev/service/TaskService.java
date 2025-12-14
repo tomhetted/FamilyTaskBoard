@@ -2,16 +2,14 @@ package ru.smirnovjavadev.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.smirnovjavadev.domain.Board;
-import ru.smirnovjavadev.domain.Member;
-import ru.smirnovjavadev.domain.Task;
-import ru.smirnovjavadev.domain.TaskStatus;
+import ru.smirnovjavadev.domain.*;
 import ru.smirnovjavadev.repository.BoardRepository;
 import ru.smirnovjavadev.repository.MemberRepository;
 import ru.smirnovjavadev.repository.TaskRepository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class TaskService {
@@ -33,7 +31,8 @@ public class TaskService {
     }
 
     @Transactional
-    public Task create(Long boardId, LocalDate date, String description, Long memberId, TaskStatus status) {
+    public Task create(Long boardId, LocalDate date, String description, Long memberId,
+                       TaskStatus status, TaskType taskType, Integer weekDay) {
         if (boardId == null) throw new IllegalArgumentException("boardId is required");
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new IllegalArgumentException("Board not found"));
@@ -44,6 +43,13 @@ public class TaskService {
                     .orElseThrow(() -> new IllegalArgumentException("Member not found"));
         }
 
+        if (taskType == TaskType.ROUTINE && weekDay == null) {
+            throw new IllegalArgumentException("Для рутинных задач укажите день недели");
+        }
+        if (taskType == TaskType.REGULAR && date == null) {
+            throw new IllegalArgumentException("Для обычных задач укажите дату");
+        }
+
         if (date == null) date = LocalDate.now();
 
         Task task = Task.builder()
@@ -52,6 +58,8 @@ public class TaskService {
                 .date(date)
                 .description(description)
                 .status(status)
+                .taskType(taskType)
+                .weekDay(weekDay)
                 .build();
 
         return taskRepository.save(task);
@@ -65,13 +73,28 @@ public class TaskService {
             from = now.withDayOfMonth(1);
             to = now.withDayOfMonth(now.lengthOfMonth());
         }
-        return taskRepository.findAllByBoardIdAndDateBetweenOrderByDateAsc(boardId, from, to);
+
+        // ТОЛЬКО обычные задачи (REGULAR) для календаря месяца
+        return taskRepository.findAllByBoardIdAndTaskTypeAndDateBetweenOrderByDateAsc(
+                boardId, TaskType.REGULAR, from, to);
     }
 
     @Transactional(readOnly = true)
     public List<Task> forWeek(Long boardId, LocalDate weekStart) {
         LocalDate weekEnd = weekStart.plusDays(6);
-        return taskRepository.findAllByBoardIdAndDateBetweenOrderByDateAsc(boardId, weekStart, weekEnd);
+
+        // Получаем ВСЕ рутинные задачи для этой доски
+        List<Task> allRoutines = taskRepository.findByBoardIdAndTaskType(boardId, TaskType.ROUTINE);
+
+        // Фильтруем по дню недели: какая рутинная задача должна отображаться в какой день
+        return allRoutines.stream()
+                .filter(task -> {
+                    // Для каждой рутинной задачи вычисляем, в какой день недели она должна показываться
+                    // task.getWeekDay() = 1 (понедельник) ... 7 (воскресенье)
+                    LocalDate taskDateInWeek = weekStart.plusDays(task.getWeekDay() - 1);
+                    return !taskDateInWeek.isBefore(weekStart) && !taskDateInWeek.isAfter(weekEnd);
+                })
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -94,4 +117,12 @@ public class TaskService {
         if (!taskRepository.existsById(id)) throw new IllegalArgumentException("Task not found");
         taskRepository.deleteById(id);
     }
+
+    // Новый метод для получения рутинных задач недели
+    @Transactional(readOnly = true)
+    public List<Task> getRoutineTasksForWeek(Long boardId) {
+        return taskRepository.findByBoardIdAndTaskType(boardId, TaskType.ROUTINE);
+    }
+
+
 }

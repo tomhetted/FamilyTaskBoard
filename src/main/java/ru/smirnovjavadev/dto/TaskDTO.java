@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 import ru.smirnovjavadev.domain.Task;
 import ru.smirnovjavadev.domain.TaskStatus;
+import ru.smirnovjavadev.domain.TaskType;
 
 import java.time.LocalDate;
 
@@ -18,6 +19,8 @@ public class TaskDTO {
     private LocalDate date;
     private String description;
     private TaskStatus status;
+    private TaskType taskType;
+    private Integer weekDay;
 
     // Метод конвертации из entity в DTO
     public static TaskDTO fromEntity(Task task) {
@@ -31,6 +34,8 @@ public class TaskDTO {
                 .date(task.getDate())
                 .description(task.getDescription())
                 .status(task.getStatus())
+                .taskType(task.getTaskType())
+                .weekDay(task.getWeekDay())
                 .build();
     }
 }

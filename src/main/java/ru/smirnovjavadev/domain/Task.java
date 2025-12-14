@@ -36,6 +36,25 @@ public class Task {
     @Column(name = "status")
     private TaskStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "task_type", nullable = false)
+    @Builder.Default
+    private TaskType taskType = TaskType.REGULAR;
+
+    @Column(name = "week_day")
+    private Integer weekDay; // 1-понедельник, ..., 7-воскресенье
+
+    // Валидация: для ROUTINE задач weekDay обязателен
+    @PrePersist
+    @PreUpdate
+    private void validate() {
+        if (taskType == TaskType.ROUTINE && weekDay == null) {
+            throw new IllegalStateException("Рутинные задачи требуют указания дня недели");
+        }
+        if (taskType == TaskType.REGULAR && weekDay != null) {
+            throw new IllegalStateException("Обычные задачи не должны иметь день недели");
+        }
+    }
 
     // Геттеры и сеттеры
     public Long getId() { return id; }
@@ -55,4 +74,10 @@ public class Task {
 
     public TaskStatus getStatus() { return status; }
     public void setStatus(TaskStatus status) { this.status = status; }
+
+    public TaskType getTaskType() { return taskType; }
+    public void setTaskType(TaskType taskType) { this.taskType = taskType; }
+
+    public Integer getWeekDay() { return weekDay; }
+    public void setWeekDay(Integer weekDay) { this.weekDay = weekDay; }
 }

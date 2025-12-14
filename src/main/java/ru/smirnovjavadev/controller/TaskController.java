@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.smirnovjavadev.domain.TaskType;
 import ru.smirnovjavadev.dto.TaskDTO;
 import ru.smirnovjavadev.domain.Task;
 import ru.smirnovjavadev.service.TaskService;
@@ -66,7 +67,9 @@ public class TaskController {
                     taskDto.getDate(),
                     taskDto.getDescription(),
                     taskDto.getMemberId(),
-                    taskDto.getStatus()
+                    taskDto.getStatus(),
+                    taskDto.getTaskType() != null ? taskDto.getTaskType() : TaskType.REGULAR,
+                    taskDto.getWeekDay()
             );
             TaskDTO body = TaskDTO.fromEntity(task);
             URI location = URI.create("/api/tasks/" + task.getId());
@@ -142,9 +145,12 @@ public class TaskController {
 
     /**
      * GET /api/tasks/board/{boardId}/month?from=yyyy-MM-dd&to=yyyy-MM-dd
-     * Success: 200 OK with list of TaskDTO
+     * Теперь возвращает ТОЛЬКО обычные задачи (REGULAR) для календаря месяца
+     * Success: 200 OK с списком TaskDTO (только обычные)
      * Errors:
      *   400 - bad request
+     *   404 - board not found
+     *   500 - unexpected server error
      */
     @GetMapping("/board/{boardId}/month")
     public ResponseEntity<?> forMonth(
@@ -155,6 +161,7 @@ public class TaskController {
         try {
             if (boardId == null) return error(HttpStatus.BAD_REQUEST, "boardId is required");
 
+            // Получаем ТОЛЬКО обычные задачи для месяца
             List<TaskDTO> tasks = service.forMonth(boardId, from, to).stream()
                     .map(TaskDTO::fromEntity)
                     .collect(Collectors.toList());
@@ -169,9 +176,12 @@ public class TaskController {
 
     /**
      * GET /api/tasks/board/{boardId}/week?start=yyyy-MM-dd
-     * Success: 200 OK with list of TaskDTO
+     * Теперь возвращает ТОЛЬКО рутинные задачи (ROUTINE) для недельной колонки
+     * Success: 200 OK с списком TaskDTO (только рутинные)
      * Errors:
      *   400 - bad request (missing params)
+     *   404 - board not found
+     *   500 - unexpected server error
      */
     @GetMapping("/board/{boardId}/week")
     public ResponseEntity<?> forWeek(
@@ -182,6 +192,7 @@ public class TaskController {
             if (boardId == null) return error(HttpStatus.BAD_REQUEST, "boardId is required");
             if (weekStart == null) return error(HttpStatus.BAD_REQUEST, "start date is required");
 
+            // Получаем ТОЛЬКО рутинные задачи для недели
             List<TaskDTO> tasks = service.forWeek(boardId, weekStart).stream()
                     .map(TaskDTO::fromEntity)
                     .collect(Collectors.toList());
@@ -189,7 +200,31 @@ public class TaskController {
         } catch (IllegalArgumentException ex) {
             return error(HttpStatus.BAD_REQUEST, ex.getMessage());
         } catch (Exception ex) {
-            log.error("Unexpected error while fetching week tasks for board {} start {}: {}", boardId, weekStart, ex.getMessage(), ex);
+            log.error("Unexpected error while fetching week tasks for board {} start {}: {}",
+                    boardId, weekStart, ex.getMessage(), ex);
+            return error(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
+        }
+    }
+
+    /**
+     * GET /api/tasks/board/{boardId}/routines
+     * Получение всех рутинных задач для доски
+     * Success: 200 OK с списком TaskDTO рутинных задач
+     * Errors:
+     *   400 - неверный запрос
+     *   500 - внутренняя ошибка сервера
+     */
+    @GetMapping("/board/{boardId}/routines")
+    public ResponseEntity<?> getRoutines(@PathVariable Long boardId) {
+        try {
+            List<TaskDTO> routines = service.getRoutineTasksForWeek(boardId).stream()
+                    .map(TaskDTO::fromEntity)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(routines);
+        } catch (IllegalArgumentException ex) {
+            return error(HttpStatus.BAD_REQUEST, ex.getMessage());
+        } catch (Exception ex) {
+            log.error("Unexpected error while fetching routine tasks for board {}", boardId, ex);
             return error(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
         }
     }
