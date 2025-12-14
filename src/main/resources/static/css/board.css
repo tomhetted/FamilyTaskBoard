@@ -1,295 +1,451 @@
-/* ======= vars & reset ======= */
-:root{
-  --accent-purple: #b085d6;
-  --accent-purple-dark: #8b63b8;
+/* ======= Цветовые переменные ======= */
+:root {
+    --accent-purple: #b085d6;
+    --accent-purple-dark: #8b63b8;
 
-  --accent-green: #6dbf6d;
-  --accent-green-dark: #4f9d4f;
+    --accent-green: #6dbf6d;
+    --accent-green-dark: #4f9d4f;
 
-  --bg-start: #86c78f;    /* gradient start (зелёный оттенок) */
-  --bg-end:   #9b7fcf;    /* gradient end (фиолетовый оттенок) */
+    --grid-gap: 6px;
 
-  --text: #222;
-  --muted: #667662;
-  --card-bg: #d3e6d3;     /* day-cell background */
-  --card-border: #9fbf9f;
-  --weekcard-bg: #e2d6ea;
-  --shadow-weak: 0 1px 3px rgba(0,0,0,0.12);
-  --shadow-strong: 0 10px 30px rgba(0,0,0,0.22);
-
-  --gap: 8px;
-  --radius: 8px;
-  --font-family: "Segoe UI", Arial, sans-serif;
+    /* базовые размеры (можно тонко настроить) */
+    --day-min-height: 200px;
+    --day-padding: 4px;
+    --day-font-size: 14px;
 }
 
+/* ======= Общие стили (темнее) ======= */
 * { box-sizing: border-box; }
 
-/* Stretch full page, gradient background on html */
-html,body{ height:100%; margin:0; padding:0; font-family:var(--font-family); color:var(--text); }
-html{
-  background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
-  /* slightly darker overall by lowering brightness via overlay approach not needed here */
-}
-body{
-  background: transparent; /* gradient is on html */
-  padding: 20px;
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
 }
 
-/* Headings */
-h1,h2,h3{
-  text-align:center;
-  margin:10px 0 20px;
-  font-weight:600;
-  color:var(--text);
+html {
+    /* фон страницы — градиент */
+    background: linear-gradient(135deg, #92e0aa 0%, #b085d6 100%);
 }
 
-/* ===== Controls (prev/next/new board): purple buttons) ===== */
-.controls{
-  text-align:center;
-  margin-bottom: 10px;
-}
-.controls button{
-  background: linear-gradient(180deg,var(--accent-purple), var(--accent-purple-dark));
-  color:#fff;
-  border:none;
-  padding:8px 16px;
-  font-size:14px;
-  border-radius:6px;
-  cursor:pointer;
-  transition: transform .08s ease, box-shadow .12s ease;
-  box-shadow: 0 6px 14px rgba(100,60,150,0.14);
-}
-.controls button:hover{ transform: translateY(-2px); }
-
-/* ===== Layout container ===== */
-.container{
-  display:flex;
-  gap:var(--gap);
-  max-width:1600px;
-  margin:0 auto;
-  padding:0 10px;
-  align-items:stretch; /* важ: растягиваем правую колонку под высоту левого блока */
-  overflow-x:auto;
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: transparent;
+    padding: 20px;
+    color: #222;
 }
 
-/* левый блок (месяц) */
-.container > div:first-child{ flex:1 1 auto; min-width:0; }
+h1, h2, h3 {
+    text-align: center;
+    margin: 10px 0 20px;
+    font-weight: 600;
+    color: #222;
+}
 
-/* ===== Weekday header ===== */
-.weekday-row{
+/* ======= Кнопки навигации (prev/next/new board) – фиолетовые ======= */
+.controls button {
+    background: linear-gradient(180deg,var(--accent-purple), var(--accent-purple-dark));
+    color: #ffffff;
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.18s ease, transform 0.06s ease, box-shadow .06s;
+    box-shadow: 0 6px 14px rgba(100,60,150,0.15);
+}
+.controls button:hover {
+    background: #8f5fbd;
+    transform: translateY(-1px);
+}
+
+/* ======= Контейнер ======= */
+.container {
+    display: flex;
+    gap: 12px;
+    max-width: 1600px;
+    margin: 0 auto;
+    /* по умолчанию выравнивание по верхнему краю, чтобы календарь и week-column начинались одинаково */
+    align-items: flex-start;
+    padding: 0 10px;
+    overflow-x: auto;
+}
+
+/* Левый блок (месяц) — может сжиматься */
+.container > div:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* ======= Weekday header ====== */
+.weekday-row {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0,1fr));
-  gap: var(--gap);
-  margin-bottom: 8px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--grid-gap);
+  margin-bottom: 6px;
 }
-.weekday{
-  text-align:center;
-  font-weight:700;
-  color:#2a492a;
-  font-size:12px;
-  padding:6px 4px;
+
+.weekday {
+  text-align: center;
+  font-weight: 700;
+  color: #234223;
+  padding: 6px 4px;
+  font-size: 12px;
+}
+
+/* ======= Month grid ======= */
+.month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: var(--grid-gap);
+    flex: 1 1 auto;
+    min-width: 0;
+    /* позволяем контейнеру прокручиваться горизонтально на очень узких экранах */
+}
+
+/* ======= Day cell ======= */
+.day-cell {
+    background: #d8e7d8;
+    border: 1px solid #aacaaa;
+    min-height: var(--day-min-height);
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    padding: var(--day-padding);
+    font-size: var(--day-font-size);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    transition: transform .12s, background .18s;
+    overflow: hidden;
+}
+
+.day-cell:hover { background: #c4d8c4; }
+
+.day-cell.empty {
   background: transparent;
+  border: none;
+  box-shadow: none;
+  opacity: 0;
 }
 
-/* ===== Month grid ===== */
-.month-grid{
-  display:grid;
-  grid-template-columns: repeat(7, minmax(0,1fr));
-  gap: var(--gap);
-  flex:1 1 auto;
-  min-width:0;
+/* Заголовок дня */
+.day-header {
+    font-weight: 600;
+    margin-bottom: 2px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #234223;
 }
 
-/* ===== Day cell ===== */
-.day-cell{
-  display:flex;
-  flex-direction:column;
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius);
-  padding:6px;
-  min-height:200px;
-  font-size:14px;
-  box-shadow: var(--shadow-weak);
-  overflow:hidden;
-  transition: transform .12s ease, background .14s ease;
-}
-.day-cell:hover{ transform: translateY(-2px); background: #c9dec9; }
-
-/* placeholders (invisible) */
-.day-cell.empty{ background:transparent; border:none; box-shadow:none; opacity:0; pointer-events:none; }
-
-/* day header */
-.day-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  font-weight:600;
-  font-size:12px;
-  margin-bottom:4px;
-  color:#234223;
-}
-.day-header .small{ font-size:11px; color: rgba(35,66,35,0.8); }
-
-/* ===== Tasks area ===== */
-.tasks{
-  flex:1 1 auto;
-  min-height:0;
-  overflow-y:auto;
-  padding-right:4px;
+.day-header .small {
+    font-size: 11px;
+    color: rgba(35,66,35,0.8);
 }
 
-/* Task add form (kept small, will likely move to modal) */
-.add-form{
-  display:flex;
-  gap:6px;
-  margin-top:8px;
-  align-items:center;
-}
-.add-form input{
-  flex:1; min-width:0; padding:6px 8px; border-radius:6px; border:1px solid #a8c9a8; font-size:13px; background:#fff;
-}
-.add-form button{
-  background: linear-gradient(180deg,var(--accent-purple),var(--accent-purple-dark));
-  color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:13px;
-  box-shadow: 0 6px 12px rgba(133,79,176,0.12);
-}
-.add-form button:hover{ transform: translateY(-1px); }
-
-/* ===== Add-task button inside cells ===== */
-.add-action{
-  margin-top:6px;
-  width:100%;
-  display:flex;
-  justify-content:flex-end; /* default on month cells */
-}
-.week-day .add-action{ justify-content:center; } /* centered in week column */
-
-.btn-add-task{
-  background: #bfa0e0;
-  color:#fff;
-  border:none;
-  padding:6px 12px;
-  border-radius:10px;
-  cursor:pointer;
-  font-size:13px;
-  transition: transform .06s ease, box-shadow .12s ease;
-  box-shadow: 0 2px 6px rgba(163,129,209,0.18);
-  white-space:nowrap;
-}
-.btn-add-task:hover{ transform: translateY(-2px); background:#a386d1; }
-
-/* ===== Week column (правый столбец) =====
-   Ширина колонки контролирует JS (syncWeekColumnWidth).
-   CSS обеспечивает правильный растяг и распределение высоты */
-.week-column{
-  display:flex;
-  flex-direction:column;
-  gap: var(--gap);
-  flex: 0 0 auto; /* ширина устанавливается JS */
-  align-items:stretch;
+/* ======= Tasks container ======= */
+.tasks {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 2px;
 }
 
-/* week-day cards: равномерно распределяются по высоте колонки */
-.week-day{
-  display:flex;
-  flex-direction:column;
-  background: var(--weekcard-bg);
-  border:1px solid #bba8c8;
-  border-radius: var(--radius);
-  padding:8px;
-  box-shadow: var(--shadow-weak);
-  /* делаем их гибкими: равномерное распределение доступной высоты */
-  flex: 1 1 0;
-  min-height: 0;
+/* ======= Add form (временно) ======= */
+.add-form {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+    align-items: center;
 }
-.week-day .day-header{ color:#4b2e65; margin-bottom:6px; }
 
-/* ===== Task card ===== */
-.task{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  padding:8px;
-  margin:6px 0;
-  border-radius:6px;
-  font-size:13px;
-  border-left:6px solid transparent;
-  transition: transform .08s ease, box-shadow .12s ease, background .12s ease;
-  overflow:hidden;
+.add-form input {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 6px;
+    border: 1px solid #aacaaa;
+    border-radius: 6px;
+    font-size: 13px;
+    height: 28px;
+    background: #f7faf7;
 }
-.task:hover{ transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.08); }
 
-/* status colours — left border + subtle bg */
-.task--todo{ border-left-color:#d64532; background: rgba(214,69,50,0.08); }
-.task--in-progress{ border-left-color:#2c89c9; background: rgba(44,137,201,0.08); }
-.task--done{ border-left-color:#229a55; background: rgba(34,154,85,0.08); }
-
-/* description: single-line ellipsis */
-.task-desc{ flex:1 1 auto; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-
-/* ===== Modals ===== */
-.modal{
-  position:fixed; inset:0;
-  display:flex; align-items:center; justify-content:center;
-  background: rgba(5,15,5,0.45);
-  z-index:1200; padding:20px;
+.add-form button {
+    background: linear-gradient(180deg,var(--accent-purple), var(--accent-purple-dark));
+    border: none;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    height: 28px;
+    font-size: 13px;
+    box-shadow: 0 6px 12px rgba(133,79,176,0.12);
 }
-.modal-content{
-  background:#eef3ef;
-  padding:22px;
-  border-radius:12px;
-  width:480px; max-width:96%;
-  box-shadow: var(--shadow-strong);
-  border:1px solid rgba(80,120,90,0.2);
-}
-.modal-content h3{ margin-top:0; color:#234223; }
+.add-form button:hover { background: #8f5fbd; }
 
-/* inputs in modal */
+/* ======= Add-task button ======= */
+.add-action {
+    margin-top: 4px;
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+}
+
+.week-day .add-action { justify-content: center; }
+
+.btn-add-task {
+    background: #bfa0e0;
+    color: #fff;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background .16s, transform .06s;
+    box-shadow: 0 2px 6px rgba(163,129,209,0.18);
+    white-space: nowrap;
+}
+
+.btn-add-task:hover { background: #a386d1; }
+
+/* ======= Week Column ======= */
+/* По умолчанию фиксированная/умеренная ширина — JS может синхронизировать точную ширину */
+.week-column {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 180px;
+    max-width: 220px;
+    min-width: 140px;
+    gap: var(--grid-gap);
+    align-items: stretch;
+}
+
+/* Заголовок колонки недели */
+.week-column > h3 {
+    margin: 0 0 6px 0;
+    padding-left: 4px;
+    color: #234223;
+}
+
+/* Week-day cell */
+.week-day {
+    background: #e4d7ed;
+    border: 1px solid #bba8c8;
+    border-radius: 8px;
+    padding: 6px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0; /* равномерно распределяем высоту в колонке */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
+.week-day .day-header { color: #4b2e65; font-size: 13px; margin-bottom: 6px; }
+
+/* ======= Task card (цветовые статусы) ======= */
+.task {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    margin: 6px 0;
+    border-radius: 6px;
+    font-size: 13px;
+    border-left: 6px solid transparent;
+    transition: background .12s, transform .08s;
+    overflow: hidden;
+}
+
+.task--todo {
+    border-left-color: #d64532;
+    background: rgba(214,69,50,0.08);
+}
+.task--in-progress {
+    border-left-color: #2c89c9;
+    background: rgba(44,137,201,0.08);
+}
+.task--done {
+    border-left-color: #229a55;
+    background: rgba(34,154,85,0.08);
+}
+
+.task:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.09);
+}
+
+.task-desc {
+    flex: 1 1 auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ========================================================= */
+/* ======================= MODALS ========================== */
+/* ========================================================= */
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 15, 5, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200;
+    padding: 20px;
+}
+
+.modal-content {
+    background: #f0f3f0;
+    padding: 22px;
+    border-radius: 12px;
+    width: 480px;
+    max-width: 96%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+    border: 1px solid rgba(80,120,90,0.25);
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    color: #234223;
+}
+
 .modal-content input,
 .modal-content textarea,
-.modal-content select{
-  width:100%;
-  padding:8px 10px;
-  border-radius:6px;
-  border:1px solid #a8c0a8;
-  background:#fff; font-size:14px; margin-bottom:12px;
+.modal-content select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #a8c0a8;
+    background: white;
+    font-size: 14px;
+    margin-bottom: 12px;
 }
 
-/* modal actions: unified button styles (purple primary preserved) */
-.modal-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:12px; }
-.btn-primary{
-  background: linear-gradient(180deg,var(--accent-purple), var(--accent-purple-dark));
-  color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; box-shadow: 0 4px 10px rgba(150,90,200,0.14);
-}
-.btn-primary:hover{ transform: translateY(-2px); }
-.btn-secondary{
-  background:#c8cfc8; color:#333; border:none; padding:8px 16px; border-radius:6px; cursor:pointer;
-}
-.btn-danger{ background:#d64532; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; }
-.btn-danger:hover{ transform: translateY(-2px); }
-
-/* focus states for accessibility */
-button:focus, input:focus, select:focus, textarea:focus{
-  outline: 3px solid rgba(130,170,120,0.18);
-  outline-offset:2px;
-  box-shadow: none;
+/* Фиолетовые кнопки в модалках */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 12px;
 }
 
-/* small helpers */
-.hidden{ display:none !important; }
-
-/* ===== Responsive tweaks ===== */
-@media (max-width: 900px){
-  .container{ gap:10px; padding:0 8px; }
-  .week-column{ /* keep it usable on smaller screens — JS still chooses final width */ max-width:220px; min-width:120px; }
-  .btn-add-task{ padding:6px 10px; font-size:12px; }
+.btn-primary {
+    background: var(--accent-purple);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    box-shadow: 0 4px 10px rgba(150,90,200,0.16);
 }
-@media (max-width:520px){
-  .container{ flex-direction:column; }
-  .week-column{ order:2; width:100%; max-width:none; min-width:0; }
-  .container > div:first-child{ order:1; }
-  .modal-content{ padding:14px; border-radius:8px; width:96%; }
+.btn-primary:hover {
+    background: var(--accent-purple-dark);
+}
+
+.btn-secondary {
+    background: #c8cfc8;
+    border: none;
+    color: #333;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.btn-secondary:hover {
+    background: #b9c3b9;
+}
+
+.btn-danger {
+    background: #d64532;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.btn-danger:hover {
+    background: #b83425;
+}
+
+.hidden { display: none !important; }
+
+/* ========================= RESPONSIVE ========================= */
+
+/* Tablet / small desktop: колонки становятся вертикальными при недостатке места */
+/* === Force week-column under calendar on narrow screens === */
+@media (max-width: 1100px) {
+  .container {
+    flex-direction: column !important;
+    align-items: stretch !important; /* растянет обе колонки по ширине */
+  }
+
+  /* левый контейнер (месяц) — первым */
+  .container > div:first-child {
+    order: 1 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  /* week-column — становится вторым и занимает 100% ширины */
+  .week-column {
+    order: 2 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+
+  /* сделаем, чтобы внутренние day-блоки недели шли друг за другом и занимали всю ширину */
+  .week-column .week-day {
+    width: 100% !important;
+  }
+
+  /* если JS пытаетcя синхронизировать ширину — перекроем его inline-стили */
+  .week-column[style] {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+
+  /* удобство: немного уменьшить вертикальные отступы на планшете */
+  .container { gap: 10px; }
+  .month-grid { gap: 6px; }
+}
+
+
+/* Mobile: ещё компактнее, с сохранением читабельности */
+@media (max-width: 520px) {
+    :root {
+        --day-min-height: 120px;
+        --day-font-size: 12px;
+    }
+
+    body { padding: 12px; }
+
+    h1 { font-size: 18px; margin-bottom: 12px; }
+
+    .controls button { padding: 6px 10px; font-size: 13px; }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 8px; }
+
+    .month-grid { gap: 5px; }
+    .day-cell { padding: 6px; border-radius: 8px; }
+    .day-header { font-size: 11px; margin-bottom: 4px; }
+    .weekday { font-size: 10px; padding: 4px 2px; }
+
+    .btn-add-task { padding: 5px 8px; font-size: 12px; max-width: 120px; }
+    .add-form input { height: 26px; font-size: 12px; }
+
+    .week-column { gap: 8px; }
+    .week-day { padding: 6px; }
+
+    /* пока month-grid остаётся 7 колонок, разрешаем горизонтальную прокрутку при очень узких экранах */
+    .month-grid { overflow-x: auto; grid-auto-flow: column; grid-auto-columns: minmax(120px, 1fr); }
+}
+
+/* Доп. мелкие улучшения: если контейнер очень широкий, чуть увеличим ячейки */
+@media (min-width: 1400px) {
+    :root {
+        --day-min-height: 220px;
+        --day-font-size: 15px;
+    }
 }
