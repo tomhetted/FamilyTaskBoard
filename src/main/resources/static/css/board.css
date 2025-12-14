@@ -434,6 +434,49 @@ h1, h2, h3 {
 
 .hidden { display: none !important; }
 
+/* ===================== Стили для карточек задач ===================== */
+
+/* Убираем эмодзи-иконки типов задач */
+.task-type-indicator {
+    display: none;
+}
+
+/* Контейнер для содержимого карточки задачи */
+.task-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+/* Имя участника - выделяем жирным и цветом */
+.task-member-name {
+    font-weight: 700;
+    color: #234223; /* темно-зеленый, соответствует общей палитре */
+    font-size: 12px;
+    margin-bottom: 2px;
+    display: block;
+}
+
+/* Описание задачи */
+.task-description {
+    color: #333;
+    font-size: 13px;
+    line-height: 1.3;
+    white-space: normal; /* позволяем перенос строк */
+    word-break: break-word; /* перенос длинных слов */
+}
+
+/* Для адаптивности */
+@media (max-width: 520px) {
+    .task-member-name {
+        font-size: 11px;
+    }
+
+    .task-description {
+        font-size: 12px;
+    }
+}
+
 /* ===================== RESPONSIVE ===================== */
 @media (max-width: 1100px) {
   .container {

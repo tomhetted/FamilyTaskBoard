@@ -701,15 +701,25 @@ async function renderMonth(year, month){
             const sc = statusClass(t.status);
             if (sc) tdiv.classList.add(sc);
 
-            // description (with type icon and optional member)
+            // Создаем контейнер для содержимого задачи
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'task-content';
+
+            // Добавляем имя участника (если есть)
+            if (t.memberName) {
+                const memberSpan = document.createElement('span');
+                memberSpan.className = 'task-member-name';
+                memberSpan.textContent = t.memberName;
+                contentDiv.appendChild(memberSpan);
+            }
+
+            // Добавляем описание задачи
             const descSpan = document.createElement('span');
-            descSpan.className = 'task-desc';
+            descSpan.className = 'task-description';
+            descSpan.textContent = t.description || '';
+            contentDiv.appendChild(descSpan);
 
-            const typeIcon = t.taskType === TASK_TYPES.ROUTINE ? '🔄 ' : '📅 ';
-            const memberPart = t.memberName ? '['+t.memberName+'] ' : '';
-            descSpan.textContent = typeIcon + memberPart + (t.description || '');
-
-            tdiv.appendChild(descSpan);
+            tdiv.appendChild(contentDiv);
 
             // left click -> edit modal
             tdiv.addEventListener('click', (ev) => {
@@ -857,12 +867,25 @@ async function renderWeek(){
             const sc = statusClass(t.status);
             if (sc) tdiv.classList.add(sc);
 
-            const descSpan = document.createElement('span');
-            descSpan.className = 'task-desc';
+            // Создаем контейнер для содержимого задачи
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'task-content';
 
-            const typeIcon = t.taskType === TASK_TYPES.ROUTINE ? '🔄 ' : '📅 ';
-            const memberPart = t.memberName ? '['+t.memberName+'] ' : '';
-            descSpan.textContent = typeIcon + memberPart + (t.description || '');
+            // Добавляем имя участника (если есть)
+            if (t.memberName) {
+                const memberSpan = document.createElement('span');
+                memberSpan.className = 'task-member-name';
+                memberSpan.textContent = t.memberName;
+                contentDiv.appendChild(memberSpan);
+            }
+
+            // Добавляем описание задачи
+            const descSpan = document.createElement('span');
+            descSpan.className = 'task-description';
+            descSpan.textContent = t.description || '';
+            contentDiv.appendChild(descSpan);
+
+            tdiv.appendChild(contentDiv);
 
             tdiv.appendChild(descSpan);
 
