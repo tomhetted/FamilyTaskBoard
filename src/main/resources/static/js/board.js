@@ -887,8 +887,6 @@ async function renderWeek(){
 
             tdiv.appendChild(contentDiv);
 
-            tdiv.appendChild(descSpan);
-
             tdiv.addEventListener('click', (ev) => {
                 ev.preventDefault();
                 const taskObj = {
