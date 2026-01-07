@@ -1,9 +1,10 @@
 package ru.smirnovjavadev.dto;
 
 
+import jakarta.validation.constraints.NotBlank;
 import ru.smirnovjavadev.domain.Household;
 
-import javax.validation.constraints.NotBlank;
+
 
 public class HouseholdDTO {
 

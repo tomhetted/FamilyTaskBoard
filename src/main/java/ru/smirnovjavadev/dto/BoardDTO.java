@@ -1,7 +1,6 @@
 package ru.smirnovjavadev.dto;
 
 import lombok.Builder;
-import ru.smirnovjavadev.domain.Board;
 
 @Builder
 public class BoardDTO {
@@ -20,16 +19,6 @@ public class BoardDTO {
         this.year = year;
         this.month = month;
         this.householdId = householdId;
-    }
-
-    public static BoardDTO fromEntity(Board board) {
-        return new BoardDTO(
-                board.getId(),
-                board.getTitle(),
-                board.getYear(),
-                board.getMonth(),
-                board.getHousehold() != null ? board.getHousehold().getId() : null
-        );
     }
 
     // Геттеры и сеттеры

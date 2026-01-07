@@ -11,7 +11,7 @@ import ru.smirnovjavadev.dto.MemberDTO;
 import ru.smirnovjavadev.domain.Member;
 import ru.smirnovjavadev.service.MemberService;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;

@@ -1,8 +1,8 @@
 package ru.smirnovjavadev.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import ru.smirnovjavadev.domain.Member;
 
-import javax.validation.constraints.NotBlank;
 
 public class MemberDTO {
 

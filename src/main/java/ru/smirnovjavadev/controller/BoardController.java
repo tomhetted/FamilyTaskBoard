@@ -11,7 +11,7 @@ import ru.smirnovjavadev.dto.BoardDTO;
 import ru.smirnovjavadev.domain.Board;
 import ru.smirnovjavadev.service.BoardService;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;

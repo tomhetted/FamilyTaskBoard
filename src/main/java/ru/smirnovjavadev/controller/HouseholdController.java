@@ -11,7 +11,7 @@ import ru.smirnovjavadev.dto.HouseholdDTO;
 import ru.smirnovjavadev.domain.Household;
 import ru.smirnovjavadev.service.HouseholdService;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;

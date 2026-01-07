@@ -13,7 +13,7 @@ import ru.smirnovjavadev.dto.TaskDTO;
 import ru.smirnovjavadev.domain.Task;
 import ru.smirnovjavadev.service.TaskService;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.net.URI;
 import java.time.LocalDate;
 import java.util.List;
