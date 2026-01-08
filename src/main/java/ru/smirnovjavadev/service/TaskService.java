@@ -3,13 +3,13 @@ package ru.smirnovjavadev.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.smirnovjavadev.domain.*;
+import ru.smirnovjavadev.exception.ResourceNotFoundException;
 import ru.smirnovjavadev.repository.BoardRepository;
 import ru.smirnovjavadev.repository.MemberRepository;
 import ru.smirnovjavadev.repository.TaskRepository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class TaskService {
@@ -27,7 +27,7 @@ public class TaskService {
     @Transactional(readOnly = true)
     public Task getById(Long id) {
         return taskRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Task", "id", id));
     }
 
     @Transactional
@@ -35,12 +35,12 @@ public class TaskService {
                        TaskStatus status, TaskType taskType, Integer weekDay) {
         if (boardId == null) throw new IllegalArgumentException("boardId is required");
         Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new IllegalArgumentException("Board not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Board", "id", boardId));
 
         Member member = null;
         if (memberId != null) {
             member = memberRepository.findById(memberId)
-                    .orElseThrow(() -> new IllegalArgumentException("Member not found"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Member", "id", memberId));
         }
 
         if (taskType == TaskType.ROUTINE && weekDay == null) {
@@ -91,12 +91,15 @@ public class TaskService {
 
     @Transactional
     public Task update(Long id, LocalDate date, String description, Long memberId, TaskStatus status) {
-        Task task = taskRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Task not found"));
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Task", "id", id));
+
         if (date != null) task.setDate(date);
         if (description != null) task.setDescription(description);
         if (status != null) task.setStatus(status);
         if (memberId != null) {
-            Member member = memberRepository.findById(memberId).orElseThrow(() -> new IllegalArgumentException("Member not found"));
+            Member member = memberRepository.findById(memberId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Member", "id", memberId));
             task.setMember(member);
         } else {
             task.setMember(null);
@@ -106,7 +109,9 @@ public class TaskService {
 
     @Transactional
     public void delete(Long id) {
-        if (!taskRepository.existsById(id)) throw new IllegalArgumentException("Task not found");
+        if (!taskRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Task", "id", id);
+        }
         taskRepository.deleteById(id);
     }
 
@@ -115,6 +120,4 @@ public class TaskService {
     public List<Task> getRoutineTasksForWeek(Long boardId) {
         return taskRepository.findByBoardIdAndTaskType(boardId, TaskType.ROUTINE);
     }
-
-
 }

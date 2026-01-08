@@ -13,11 +13,8 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
 
     Optional<Board> findByHouseholdIdAndYearAndMonth(Long householdId, int year, int month);
 
-    List<Board> findByHouseholdId(Long householdId);
-
     List<Board> findAllByHouseholdId(Long householdId);
 
-    // в BoardRepository
     Optional<Board> findFirstByOrderByIdAsc();
 
 }

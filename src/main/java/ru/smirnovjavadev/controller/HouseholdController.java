@@ -1,9 +1,5 @@
 package ru.smirnovjavadev.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +18,6 @@ import java.util.stream.Collectors;
 public class HouseholdController {
 
     private final HouseholdService service;
-    private final Logger log = LoggerFactory.getLogger(HouseholdController.class);
 
     public HouseholdController(HouseholdService service) {
         this.service = service;
@@ -31,8 +26,6 @@ public class HouseholdController {
     /**
      * GET /api/households
      * Success: 200 OK with list of HouseholdDTO
-     * Errors:
-     *   500 - unexpected server error
      */
     @GetMapping
     public ResponseEntity<List<HouseholdDTO>> all() {
@@ -45,95 +38,32 @@ public class HouseholdController {
     /**
      * GET /api/households/{id}
      * Success: 200 OK with HouseholdDTO
-     * Errors:
-     *   404 - household not found
-     *   500 - unexpected server error
      */
     @GetMapping("/{id}")
-    public ResponseEntity<?> get(@PathVariable Long id) {
-        try {
-            Household h = service.getById(id);
-            return ResponseEntity.ok(HouseholdDTO.fromEntity(h));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(errorPayload(404, ex.getMessage()));
-        } catch (Exception ex) {
-            log.error("Error getting household {}", id, ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(errorPayload(500, "Internal server error"));
-        }
+    public ResponseEntity<HouseholdDTO> get(@PathVariable Long id) {
+        Household household = service.getById(id);
+        return ResponseEntity.ok(HouseholdDTO.fromEntity(household));
     }
 
     /**
      * POST /api/households
      * Success: 201 Created, Location header points to new resource
-     * Errors:
-     *   400 - invalid input
-     *   409 - conflict (unique)
-     *   500 - unexpected server error
      */
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody @Valid HouseholdDTO dto) {
-        try {
-            Household h = service.create(dto.getName());
-            HouseholdDTO body = HouseholdDTO.fromEntity(h);
-            URI location = URI.create("/api/households/" + h.getId());
-            return ResponseEntity.created(location).body(body);
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(errorPayload(400, ex.getMessage()));
-        } catch (DataIntegrityViolationException ex) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(errorPayload(409, "Conflict creating household"));
-        } catch (Exception ex) {
-            log.error("Error creating household", ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(errorPayload(500, "Internal server error"));
-        }
+    public ResponseEntity<HouseholdDTO> create(@RequestBody @Valid HouseholdDTO dto) {
+        Household household = service.create(dto.getName());
+        HouseholdDTO body = HouseholdDTO.fromEntity(household);
+        URI location = URI.create("/api/households/" + household.getId());
+        return ResponseEntity.created(location).body(body);
     }
 
     /**
      * DELETE /api/households/{id}
      * Success: 204 No Content
-     * Errors:
-     *   404 - not found
-     *   400 - bad request
-     *   409 - conflict (FK)
-     *   500 - unexpected server error
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
-        try {
-            service.delete(id);
-            return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException ex) {
-            String msg = ex.getMessage() != null ? ex.getMessage() : "Invalid request";
-            if (msg.toLowerCase().contains("not found")) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(errorPayload(404, msg));
-            }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(errorPayload(400, msg));
-        } catch (DataIntegrityViolationException ex) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(errorPayload(409, "Cannot delete household with related data"));
-        } catch (Exception ex) {
-            log.error("Unexpected error while deleting household {}", id, ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(errorPayload(500, "Internal server error"));
-        }
-    }
-
-    // small helper to build payloads for this controller
-    private static ErrorPayload errorPayload(int status, String message) {
-        return new ErrorPayload(status, message);
-    }
-
-    public static class ErrorPayload {
-        private final int status;
-        private final String message;
-        public ErrorPayload(int status, String message) { this.status = status; this.message = message; }
-        public int getStatus() { return status; }
-        public String getMessage() { return message; }
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

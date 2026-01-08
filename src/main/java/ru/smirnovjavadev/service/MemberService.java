@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.smirnovjavadev.domain.Household;
 import ru.smirnovjavadev.domain.Member;
+import ru.smirnovjavadev.exception.ResourceNotFoundException;
 import ru.smirnovjavadev.repository.HouseholdRepository;
 import ru.smirnovjavadev.repository.MemberRepository;
 
@@ -27,7 +28,7 @@ public class MemberService {
     @Transactional(readOnly = true)
     public Member getById(Long id) {
         return memberRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Member not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Member", "id", id));
     }
 
     @Transactional
@@ -36,7 +37,7 @@ public class MemberService {
             throw new IllegalArgumentException("Name is required");
         }
         Household household = householdRepository.findById(householdId)
-                .orElseThrow(() -> new IllegalArgumentException("Household not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Household", "id", householdId));
 
         // проверяем дубликаты в household
         if (memberRepository.existsByHouseholdIdAndName(householdId, name)) {
@@ -60,7 +61,7 @@ public class MemberService {
         }
 
         if (!memberRepository.existsById(id)) {
-            throw new IllegalArgumentException("Member not found with id=" + id);
+            throw new ResourceNotFoundException("Member", "id", id);
         }
 
         try {

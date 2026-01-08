@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.smirnovjavadev.domain.Board;
 import ru.smirnovjavadev.dto.BoardDTO;
+import ru.smirnovjavadev.exception.ResourceNotFoundException;
 import ru.smirnovjavadev.repository.BoardRepository;
 import ru.smirnovjavadev.repository.HouseholdRepository;
 
@@ -34,7 +35,7 @@ public class BoardService {
     @Transactional(readOnly = true)
     public Board getById(Long id) {
         return boardRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Board not found with id=" + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Board", "id", id));
     }
 
     @Transactional
@@ -47,7 +48,7 @@ public class BoardService {
 
         // check household exists
         var household = householdRepository.findById(dto.getHouseholdId())
-                .orElseThrow(() -> new IllegalArgumentException("Household not found with id=" + dto.getHouseholdId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Household", "id", dto.getHouseholdId()));
 
         // check duplicate existing board for same household/year/month
         Optional<Board> exist = boardRepository.findByHouseholdIdAndYearAndMonth(dto.getHouseholdId(), dto.getYear(), dto.getMonth());
@@ -82,7 +83,7 @@ public class BoardService {
         // create
         Board board = Board.builder()
                 .household(householdRepository.findById(householdId)
-                        .orElseThrow(() -> new IllegalArgumentException("Household not found with id=" + householdId)))
+                        .orElseThrow(() -> new ResourceNotFoundException("Household", "id", householdId)))
                 .year(year)
                 .month(month)
                 .title("Board " + month + "/" + year)
@@ -106,29 +107,18 @@ public class BoardService {
     public List<BoardDTO> getBoardsByHousehold(Long householdId) {
         if (householdId == null) throw new IllegalArgumentException("householdId is required");
         return boardRepository.findAllByHouseholdId(householdId).stream()
-                .map(this::toDto)
+                .map(BoardDTO::fromEntity)  // Изменено с this::toDto на BoardDTO::fromEntity
                 .collect(Collectors.toList());
     }
 
     @Transactional
     public boolean deleteById(Long id) {
         if (id == null) return false;
-        if (!boardRepository.existsById(id)) return false;
+        if (!boardRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Board", "id", id);
+        }
         boardRepository.deleteById(id);
         return true;
-    }
-
-    // helper to map entity -> dto
-    public BoardDTO toDto(Board board) {
-        if (board == null) return null;
-        BoardDTO dto = BoardDTO.builder()
-                .id(board.getId())
-                .title(board.getTitle())
-                .year(board.getYear())
-                .month(board.getMonth())
-                .householdId(board.getHousehold() != null ? board.getHousehold().getId() : null)
-                .build();
-        return dto;
     }
 
     // small container to indicate creation

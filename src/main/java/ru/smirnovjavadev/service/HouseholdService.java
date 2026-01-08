@@ -6,6 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.smirnovjavadev.domain.Household;
+import ru.smirnovjavadev.exception.ResourceNotFoundException;
 import ru.smirnovjavadev.repository.HouseholdRepository;
 
 import java.util.List;
@@ -23,7 +24,7 @@ public class HouseholdService {
     @Transactional(readOnly = true)
     public Household getById(Long id) {
         return householdRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Household not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Household", "id", id));
     }
 
     @Transactional
@@ -50,7 +51,7 @@ public class HouseholdService {
         }
 
         if (!householdRepository.existsById(id)) {
-            throw new IllegalArgumentException("Household not found with id=" + id);
+            throw new ResourceNotFoundException("Household", "id", id);
         }
 
         try {
