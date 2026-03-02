@@ -2,8 +2,6 @@ package ru.smirnovjavadev.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -21,9 +19,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable) // Можно включить позже, когда будет фронтенд с CSRF токенами
+                .csrf(AbstractHttpConfigurer::disable) // Временное отключение для API тестирования
                 .authorizeHttpRequests(auth -> auth
-                        // Публичные эндпоинты
+                        // Публичные ресурсы
                         .requestMatchers(
                                 "/",
                                 "/home",
@@ -31,6 +29,7 @@ public class SecurityConfig {
                                 "/login",
                                 "/css/**",
                                 "/js/**",
+                                "/images/**",
                                 "/error"
                         ).permitAll()
 
@@ -38,7 +37,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/**").authenticated()
 
                         // Веб-страницы требуют аутентификации
-                        .requestMatchers("/boards/**", "/members/**", "/households/**").authenticated()
+                        .requestMatchers("/boards/**").authenticated()
 
                         .anyRequest().authenticated()
                 )
@@ -67,10 +66,5 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
-        return authConfig.getAuthenticationManager();
     }
 }

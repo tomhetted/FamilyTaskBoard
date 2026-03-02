@@ -10,6 +10,7 @@ import ru.smirnovjavadev.dto.BoardDTO;
 import ru.smirnovjavadev.exception.ResourceNotFoundException;
 import ru.smirnovjavadev.repository.BoardRepository;
 import ru.smirnovjavadev.repository.HouseholdRepository;
+import ru.smirnovjavadev.service.auth.CurrentUserService;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,22 +21,33 @@ public class BoardService {
 
     private final BoardRepository boardRepository;
     private final HouseholdRepository householdRepository;
+    private final CurrentUserService currentUserService;
     private final Logger log = LoggerFactory.getLogger(BoardService.class);
 
-    public BoardService(BoardRepository boardRepository, HouseholdRepository householdRepository) {
+    public BoardService(BoardRepository boardRepository, HouseholdRepository householdRepository, CurrentUserService currentUserService) {
         this.boardRepository = boardRepository;
         this.householdRepository = householdRepository;
+        this.currentUserService = currentUserService;
     }
 
     @Transactional(readOnly = true)
     public Optional<Board> findAny() {
-        return boardRepository.findFirstByOrderByIdAsc();
+        // Возвращаем первую доску из текущего домохозяйства
+        return currentUserService.getCurrentHouseholdId()
+                .flatMap(householdId -> boardRepository.findAllByHouseholdId(householdId)
+                        .stream()
+                        .findFirst());
     }
 
     @Transactional(readOnly = true)
     public Board getById(Long id) {
-        return boardRepository.findById(id)
+        Board board = boardRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Board", "id", id));
+
+        // Проверка прав доступа
+        checkBoardAccess(board);
+
+        return board;
     }
 
     @Transactional
@@ -45,6 +57,11 @@ public class BoardService {
         if (dto.getHouseholdId() == null) throw new IllegalArgumentException("householdId is required");
         if (dto.getMonth() < 1 || dto.getMonth() > 12) throw new IllegalArgumentException("month must be 1..12");
         if (dto.getYear() < 1900) throw new IllegalArgumentException("year seems invalid");
+
+        // check that user creates a board in his household
+        Long currentHouseholdId = currentUserService.getCurrentHouseholdId()
+                .orElseThrow(() -> new IllegalArgumentException("User is not associated with any household"));
+        if (!currentHouseholdId.equals(dto.getHouseholdId())) throw new IllegalArgumentException("Cannot create board in another household");
 
         // check household exists
         var household = householdRepository.findById(dto.getHouseholdId())
@@ -105,20 +122,35 @@ public class BoardService {
 
     @Transactional(readOnly = true)
     public List<BoardDTO> getBoardsByHousehold(Long householdId) {
-        if (householdId == null) throw new IllegalArgumentException("householdId is required");
+        // Проверяем доступ к домохозяйству
+        if (!currentUserService.isUserInHousehold(householdId)) {
+            throw new IllegalArgumentException("Access denied to household");
+        }
+
         return boardRepository.findAllByHouseholdId(householdId).stream()
-                .map(BoardDTO::fromEntity)  // Изменено с this::toDto на BoardDTO::fromEntity
+                .map(BoardDTO::fromEntity)
                 .collect(Collectors.toList());
     }
 
     @Transactional
     public boolean deleteById(Long id) {
-        if (id == null) return false;
-        if (!boardRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Board", "id", id);
+        Board board = getById(id); // Проверка прав доступа
+
+        // Дополнительная проверка для администратора
+        if (!currentUserService.isHouseholdAdmin()) {
+            throw new IllegalArgumentException("Only household admin can delete boards");
         }
+
         boardRepository.deleteById(id);
         return true;
+    }
+
+    private void checkBoardAccess(Board board) {
+        Long boardHouseholdId = board.getHousehold() != null ? board.getHousehold().getId() : null;
+
+        if (!currentUserService.isUserInHousehold(boardHouseholdId)) {
+            throw new ResourceNotFoundException("Board", "id", board.getId());
+        }
     }
 
     // small container to indicate creation

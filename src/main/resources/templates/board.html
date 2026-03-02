@@ -1,11 +1,25 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
 <head>
   <meta charset="UTF-8">
   <title th:text="${title} ?: 'TaskBoard'">Board</title>
   <link rel="stylesheet" th:href="@{/css/board.css}">
 </head>
 <body>
+
+<!-- Меню пользователя -->
+<div class="user-menu" style="position: absolute; top: 10px; right: 10px;">
+  <div sec:authorize="isAuthenticated()">
+    Привет, <span sec:authentication="name"></span>!
+    <a th:href="@{/profile}" style="margin-left: 10px;">Профиль</a>
+    <form th:action="@{/logout}" method="post" style="display: inline; margin-left: 10px;">
+      <button type="submit" style="background: none; border: none; color: blue; cursor: pointer; text-decoration: underline;">Выйти</button>
+    </form>
+  </div>
+</div>
+
 
 <!-- Передаём значения контроллера в data-атрибуты -->
 <div id="boardData"
