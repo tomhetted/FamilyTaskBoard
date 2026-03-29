@@ -2,6 +2,7 @@ package ru.smirnovjavadev.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.smirnovjavadev.dto.BoardDTO;
@@ -47,8 +48,10 @@ public class BoardController {
 
     /**
      * DELETE /api/boards/{id}
-     * Success: 204 No Content when deleted
+     * Success: 204 No Content
+     * Errors: 403 Forbidden (не админ), 404 Not Found
      */
+    @PreAuthorize("@currentUserService.isAdminOfBoardHousehold(#id)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.deleteById(id);
