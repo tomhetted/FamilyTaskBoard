@@ -960,6 +960,30 @@ if (nextBtn) nextBtn.addEventListener('click', async ()=>{
     await renderMonth(currentYear, currentMonth);
 });
 
+const deleteBoardBtn = document.getElementById('deleteCurrentBoard');
+if (deleteBoardBtn) {
+    deleteBoardBtn.addEventListener('click', async () => {
+        if (!confirm('Вы уверены, что хотите удалить эту доску и все её задачи? Это действие необратимо.')) {
+            return;
+        }
+        try {
+            const response = await fetch(`/api/boards/${BOARD_ID}`, { method: 'DELETE' });
+            if (response.ok) {
+                // Перенаправляем на список досок или на первую доступную
+                window.location.href = '/boards';
+            } else if (response.status === 403) {
+                alert('У вас нет прав на удаление этой доски');
+            } else {
+                const error = await response.json();
+                alert('Ошибка: ' + (error.message || 'Не удалось удалить доску'));
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Ошибка соединения');
+        }
+    });
+}
+
 // ---------- modal & setup ----------
 function showCreateBoardModal(event){
     if (!(event && event.isTrusted)) return;

@@ -50,6 +50,7 @@ public class BoardViewController {
                 model.addAttribute("currentHouseholdId", householdId)
         );
 
+        model.addAttribute("isAdmin", currentUserService.isHouseholdAdmin());
         return "board";
     }
 
@@ -73,6 +74,7 @@ public class BoardViewController {
                 model.addAttribute("currentHouseholdId", householdId)
         );
 
+        model.addAttribute("isAdmin", currentUserService.isHouseholdAdmin());
         return "board";
     }
 }
