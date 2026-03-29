@@ -23,7 +23,11 @@
 
 <!-- Передаём значения контроллера в data-атрибуты -->
 <div id="boardData"
-     th:attr="data-board-id=${boardId}, data-year=${year}, data-month=${month}, data-title=${title}"
+     th:attr="data-board-id=${boardId},
+               data-year=${year},
+               data-month=${month},
+               data-title=${title},
+               data-current-household-id=${currentHouseholdId}"
      style="display:none"></div>
 
 <!-- Заголовок теперь управляется JS: "${title} на <месяц>" -->
@@ -74,14 +78,10 @@
       <input id="cb-month" type="number" min="1" max="12">
     </div>
 
-    <div class="form-row">
+    <!-- Информация о текущем домохозяйстве (опционально) -->
+    <div class="form-row" th:if="${currentHouseholdId}">
       <label>Домохозяйство</label>
-      <select id="cb-household-select">
-        <option value="">Загрузка...</option>
-      </select>
-      <div id="cb-new-household-row" style="display:none; width:100%;">
-        <input id="cb-new-household-name" type="text" placeholder="Название нового домохозяйства">
-      </div>
+      <span th:text="${currentHouseholdId}"></span> <!-- или название, если есть -->
     </div>
 
     <div class="form-actions">

@@ -10,6 +10,8 @@ const monthGrid = document.getElementById("monthGrid");
 const weekContainer = document.getElementById("weekContainer");
 const currentMonthLabel = document.getElementById("currentMonthLabel");
 const weekdayRow = document.getElementById("weekdayRow");
+const currentHouseholdId = boardData ? parseInt(boardData.dataset.currentHouseholdId, 10) : null;
+
 
 // При открытии страницы доски показываем ТЕКУЩИЙ месяц по умолчанию.
 const nowInit = new Date();
@@ -964,7 +966,6 @@ function showCreateBoardModal(event){
     const modal = document.getElementById('createBoardModal');
     if (!modal) return;
     modal.style.display = 'flex';
-    setTimeout(()=>loadHouseholdsIntoSelect().catch(e=>console.warn(e)), 40);
 }
 
 function hideCreateBoardModal(){
@@ -972,59 +973,36 @@ function hideCreateBoardModal(){
     if(m) m.style.display='none';
 }
 
-async function loadHouseholdsIntoSelect(){
-    const sel = document.getElementById('cb-household-select');
-    const newRow = document.getElementById('cb-new-household-row');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">(Загрузка...)</option>';
-    let list = [];
-    try { list = await safeFetchJson('/api/households'); } catch(e){ sel.innerHTML = "<option value=''>Ошибка</option>"; return; }
-    sel.innerHTML = '';
-    if (Array.isArray(list) && list.length){
-        list.forEach(h => {
-            const o = document.createElement('option'); o.value = h.id; o.textContent = h.name; sel.appendChild(o);
-        });
-    } else {
-        const o = document.createElement('option'); o.value=''; o.textContent='(Нет домохозяйств)'; sel.appendChild(o);
-    }
-    const optNew = document.createElement('option'); optNew.value='new'; optNew.textContent='Создать новое домохозяйство...'; sel.appendChild(optNew);
-    sel.onchange = null;
-    sel.addEventListener('change', ()=>{
-        if (sel.value==='new') {
-            newRow.style.display='block';
-        } else {
-            newRow.style.display='none';
-        }
-    });
-}
-
 async function submitCreateBoard(){
     const titleEl = document.getElementById('cb-title');
     const yearEl  = document.getElementById('cb-year');
     const monthEl = document.getElementById('cb-month');
-    const sel = document.getElementById('cb-household-select');
-    const newHouseEl = document.getElementById('cb-new-household-name');
     const err = document.getElementById('cb-error');
 
     err && (err.style.display='none');
     try {
         if (!yearEl || !monthEl) throw new Error('Внутренняя ошибка формы');
-        const y = parseInt(yearEl.value,10), m = parseInt(monthEl.value,10);
+        const y = parseInt(yearEl.value,10);
+        const m = parseInt(monthEl.value,10);
         if (!y || !m) throw new Error('Укажите год и месяц');
-        let householdId = null;
-        if (!sel) throw new Error('Выберите домохозяйство');
-        if (sel.value === 'new') {
-            const name = newHouseEl && newHouseEl.value.trim();
-            if (!name) throw new Error('Введите название нового домохозяйства');
-            const created = await createHousehold(name);
-            householdId = created.id;
-        } else if (sel.value) {
-            householdId = parseInt(sel.value, 10);
-        } else throw new Error('Выберите домохозяйство');
-        const payload = { title: titleEl ? titleEl.value.trim() : `Board ${m}/${y}`, year: y, month: m, householdId };
+
+        // Проверяем, что есть currentHouseholdId
+        if (!currentHouseholdId) {
+            throw new Error('Не удалось определить ваше домохозяйство. Обратитесь к администратору.');
+        }
+
+        const payload = {
+            title: titleEl ? titleEl.value.trim() : `Board ${m}/${y}`,
+            year: y,
+            month: m,
+            householdId: currentHouseholdId
+        };
         const createdBoard = await createBoardRequest(payload);
-        if (createdBoard && createdBoard.id) window.location.href = `/boards/${createdBoard.id}`;
-        else throw new Error('Пустой ответ сервера');
+        if (createdBoard && createdBoard.id) {
+            window.location.href = `/boards/${createdBoard.id}`;
+        } else {
+            throw new Error('Пустой ответ сервера');
+        }
     } catch(e){
         if (err) { err.style.display = 'block'; err.textContent = e.message || 'Ошибка'; }
         console.warn('submitCreateBoard error', e);

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import ru.smirnovjavadev.domain.Board;
 import ru.smirnovjavadev.service.BoardService;
+import ru.smirnovjavadev.service.auth.CurrentUserService;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -16,9 +17,11 @@ import java.util.Optional;
 public class BoardViewController {
 
     private final BoardService boardService;
+    private final CurrentUserService currentUserService;
 
-    public BoardViewController(BoardService boardService) {
+    public BoardViewController(BoardService boardService, CurrentUserService currentUserService) {
         this.boardService = boardService;
+        this.currentUserService = currentUserService;
     }
 
     // /boards/ — первая доска или пустой вид
@@ -42,6 +45,10 @@ public class BoardViewController {
             model.addAttribute("year", now.getYear());
             model.addAttribute("month", now.getMonthValue());
         }
+        // Добавляем ID текущего домохозяйства
+        currentUserService.getCurrentHouseholdId().ifPresent(householdId ->
+                model.addAttribute("currentHouseholdId", householdId)
+        );
 
         return "board";
     }
@@ -61,6 +68,10 @@ public class BoardViewController {
         model.addAttribute("year", year);
         model.addAttribute("month", month);
         model.addAttribute("title", title);
+
+        currentUserService.getCurrentHouseholdId().ifPresent(householdId ->
+                model.addAttribute("currentHouseholdId", householdId)
+        );
 
         return "board";
     }
